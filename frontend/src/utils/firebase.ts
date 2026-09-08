@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  sendEmailVerification,
 } from 'firebase/auth';
 import { api } from '../api/client';
 
@@ -35,6 +36,7 @@ export {
   createUserWithEmailAndPassword,
   signInWithPhoneNumber,
   RecaptchaVerifier,
+  sendEmailVerification,
 };
 
 let messaging: Messaging | null = null;

@@ -12,6 +12,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Phone number, password and Google OAuth authentication")
@@ -29,6 +31,20 @@ public class AuthController {
     @Operation(summary = "Sign in or register via Firebase (Google, Email/Password, Phone — any provider)")
     public ResponseEntity<AuthResponse> firebaseLogin(@Valid @RequestBody GoogleAuthRequest request) {
         return ResponseEntity.ok(authService.googleLogin(request));
+    }
+
+    @PostMapping("/send-otp")
+    @Operation(summary = "Send OTP to email for verification")
+    public ResponseEntity<?> sendOtp(@RequestBody OtpRequest request) {
+        authService.generateAndSendOtp(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
+    }
+
+    @PostMapping("/verify-otp")
+    @Operation(summary = "Verify OTP sent to email")
+    public ResponseEntity<?> verifyOtp(@RequestBody OtpVerifyRequest request) {
+        authService.verifyOtp(request.getEmail(), request.getOtp());
+        return ResponseEntity.ok(Map.of("message", "OTP verified successfully"));
     }
 
     @PostMapping("/complete-profile")

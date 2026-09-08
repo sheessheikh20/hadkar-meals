@@ -18,6 +18,10 @@ export const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,15 +74,47 @@ export const RegisterPage: React.FC = () => {
     }
 
     try {
+      // Trigger backend to send OTP via Brevo
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(()=>({}));
+        throw new Error(errData.message || 'Failed to send OTP.');
+      }
+      // Show OTP Modal
+      setShowOtpModal(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP email.');
+    } finally { setLoading(false); }
+  };
+
+  const handleVerifyOtpAndCreateAccount = async () => {
+    if (otp.length !== 6) return;
+    setOtpLoading(true); setError(null);
+    try {
+      // Verify OTP with backend
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), otp: otp.trim() })
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(()=>({}));
+        throw new Error(errData.message || 'Invalid OTP code.');
+      }
+      
+      // OTP verified successfully! Create Firebase account
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await handleFirebaseToken(result.user);
     } catch (err: any) {
       const code = err.code;
       if (code === 'auth/email-already-in-use') setError('This email is already registered. Please sign in instead.');
       else if (code === 'auth/invalid-email') setError('Enter a valid email address.');
-      else if (code === 'auth/weak-password') setError('Password is too weak. Use at least 6 characters.');
-      else setError(err.message || 'Registration failed.');
-    } finally { setLoading(false); }
+      else setError(err.message || 'Verification failed.');
+    } finally { setOtpLoading(false); }
   };
 
   return (
@@ -216,6 +252,39 @@ export const RegisterPage: React.FC = () => {
             </p>
           </div>
         </motion.div>
+
+        {/* ── OTP MODAL ── */}
+        <AnimatePresence>
+          {showOtpModal && (
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <motion.div initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl relative">
+                <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-brand-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 text-center mb-2">Verify your email</h3>
+                <p className="text-sm text-slate-500 text-center mb-6">We've sent a 6-digit code to <strong>{email}</strong></p>
+                
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="000000"
+                  className="w-full text-center tracking-[0.5em] text-3xl font-bold text-slate-900 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all shadow-sm py-4 mb-4"
+                />
+
+                {error && <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold text-center">{error}</div>}
+
+                <div className="flex gap-3">
+                  <button onClick={() => {setShowOtpModal(false); setError(null);}} disabled={otpLoading} className="flex-1 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all disabled:opacity-50">Cancel</button>
+                  <button onClick={handleVerifyOtpAndCreateAccount} disabled={otpLoading || otp.length !== 6} className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-amber-500 hover:from-brand-700 hover:to-amber-600 text-white font-bold text-sm shadow-lg shadow-brand-600/30 transition-all disabled:opacity-50">
+                    {otpLoading ? 'Verifying...' : 'Verify'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.div 
           initial={{ opacity: 0 }}

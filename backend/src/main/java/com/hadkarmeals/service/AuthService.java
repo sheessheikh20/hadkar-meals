@@ -9,10 +9,12 @@ import com.hadkarmeals.entity.Student;
 import com.hadkarmeals.entity.User;
 import com.hadkarmeals.exception.BusinessException;
 import com.hadkarmeals.exception.ResourceNotFoundException;
+import com.hadkarmeals.repository.EmailOtpRepository;
 import com.hadkarmeals.repository.HostelRepository;
 import com.hadkarmeals.repository.StudentRepository;
 import com.hadkarmeals.repository.UserRepository;
 import com.hadkarmeals.security.JwtTokenProvider;
+import com.hadkarmeals.service.ResendEmailService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.io.ClassPathResource;
@@ -35,6 +37,8 @@ public class AuthService {
     private final StudentService studentService;
     private final AuditLogService auditLogService;
     private final HostelRepository hostelRepository;
+    private final EmailOtpRepository emailOtpRepository;
+    private final ResendEmailService resendEmailService;
     
     private Set<String> disposableDomains = new HashSet<>();
 
@@ -450,6 +454,55 @@ public class AuthService {
         }
 
         return false;
+    }
+
+    // ── OTP Methods ───────────────────────────────────────────────────────────
+    @Transactional
+    public void generateAndSendOtp(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new BusinessException("Email is required");
+        }
+        String cleanEmail = email.trim().toLowerCase();
+
+        // 1. Block disposable emails
+        if (isDisposableEmail(cleanEmail)) {
+            throw new BusinessException("Temporary or disposable emails are not allowed.");
+        }
+
+        // 2. Generate 6 digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+
+        // 3. Save to DB
+        EmailOtp emailOtp = emailOtpRepository.findByEmail(cleanEmail).orElse(new EmailOtp());
+        emailOtp.setEmail(cleanEmail);
+        emailOtp.setOtp(otp);
+        emailOtp.setExpiresAt(java.time.LocalDateTime.now().plusMinutes(10));
+        emailOtpRepository.save(emailOtp);
+
+        // 4. Send email
+        resendEmailService.sendOtpEmail(cleanEmail, otp);
+    }
+
+    @Transactional
+    public void verifyOtp(String email, String otp) {
+        if (email == null || otp == null) {
+            throw new BusinessException("Email and OTP are required");
+        }
+        String cleanEmail = email.trim().toLowerCase();
+
+        EmailOtp emailOtp = emailOtpRepository.findByEmail(cleanEmail)
+                .orElseThrow(() -> new BusinessException("No OTP found for this email. Please request a new one."));
+
+        if (emailOtp.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException("OTP has expired. Please request a new one.");
+        }
+
+        if (!emailOtp.getOtp().equals(otp.trim())) {
+            throw new BusinessException("Invalid OTP code.");
+        }
+
+        // OTP is valid! Delete it so it can't be reused
+        emailOtpRepository.delete(emailOtp);
     }
 
     public static boolean isValidIndianMobileNumber(String phone) {
