@@ -9,6 +9,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class HadkarMealsApplication {
 
     public static void main(String[] args) {
+        java.io.File dataDir = new java.io.File("data");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
         SpringApplication.run(HadkarMealsApplication.class, args);
     }
 }
