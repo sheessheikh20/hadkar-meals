@@ -47,7 +47,7 @@ public class NotificationController {
     }
 
     @PostMapping("/send-closing-reminder")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Send dinner ordering closing reminder to all students who have not placed an order yet")
     public ResponseEntity<Map<String, Object>> sendClosingReminder(
             @RequestParam(defaultValue = "15") int minutesRemaining) {

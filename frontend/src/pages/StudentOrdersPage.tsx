@@ -4,34 +4,31 @@ import { api } from '../api/client';
 import { Order, Meal, MenuItem, OrderType, HalfTiffinChoice } from '../types';
 import { formatDateDDMMYYYY } from '../utils/dateUtils';
 import {
-  ChefHat,
-  Calendar,
   RefreshCw,
-  Lock,
   XCircle,
-  ArrowRight,
-  Utensils,
   Edit3,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  X
+  X,
+  ChevronRight,
+  Plus,
+  Minus
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const StudentOrdersPage: React.FC = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [activeTab, setActiveTab] = useState<'ALL' | 'TODAY' | 'PAST'>('ALL');
 
-  // Tonight's meal for edit modal options
+  // Edit Modal State
   const [dinnerMeal, setDinnerMeal] = useState<Meal | null>(null);
   const [sabziOptions, setSabziOptions] = useState<MenuItem[]>([]);
   const [halfPrice, setHalfPrice] = useState<number>(65);
   const [fullPrice, setFullPrice] = useState<number>(100);
-
-  // Edit Modal State
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editPortion, setEditPortion] = useState<OrderType>('FULL');
   const [editHalfChoice, setEditHalfChoice] = useState<HalfTiffinChoice>('SABZI_ROTI');
@@ -40,9 +37,7 @@ export const StudentOrdersPage: React.FC = () => {
   const [editQuantity, setEditQuantity] = useState<number>(1);
   const [savingEdit, setSavingEdit] = useState<boolean>(false);
 
-  const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
-    .toISOString()
-    .split('T')[0];
+  const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
   const loadData = async () => {
     try {
@@ -73,15 +68,15 @@ export const StudentOrdersPage: React.FC = () => {
   }, []);
 
   const handleCancel = async (orderId: number) => {
-    if (!window.confirm('Cancel this dinner order? The full amount will be credited back to your balance immediately.')) return;
+    if (!window.confirm('Cancel this dinner order?')) return;
     setCancellingId(orderId);
     setMsg(null);
     try {
       await api.cancelOrder(orderId, 'Cancelled from My Orders');
-      setMsg({ text: 'Order cancelled successfully. Amount credited to your ledger balance.', type: 'success' });
+      setMsg({ text: 'Order cancelled successfully.', type: 'success' });
       await loadData();
     } catch (e: any) {
-      setMsg({ text: e.message || 'Cannot cancel order. Kitchen prep has already started.', type: 'error' });
+      setMsg({ text: e.message || 'Cannot cancel order.', type: 'error' });
     } finally {
       setCancellingId(null);
     }
@@ -91,11 +86,7 @@ export const StudentOrdersPage: React.FC = () => {
     setEditingOrder(order);
     setEditPortion(order.orderType);
     setEditHalfChoice(order.halfTiffinChoice === 'DAL_RICE' ? 'DAL_RICE' : 'SABZI_ROTI');
-    setEditSabzi(
-      order.selectedSabzi && !order.selectedSabzi.includes('Dal')
-        ? order.selectedSabzi
-        : sabziOptions[0]?.name || ''
-    );
+    setEditSabzi(order.selectedSabzi && !order.selectedSabzi.includes('Dal') ? order.selectedSabzi : sabziOptions[0]?.name || '');
     setEditExtraRotis(order.extraRotis || 0);
     setEditQuantity(order.quantity || 1);
   };
@@ -106,7 +97,6 @@ export const StudentOrdersPage: React.FC = () => {
 
   const handleSaveEditOrder = async () => {
     if (!editingOrder || !dinnerMeal) return;
-
     let chosenSabzi = editSabzi || (sabziOptions[0]?.name || "Today's Sabzi");
     let rotis = editExtraRotis;
     let choiceToSend: string = editPortion === 'FULL' ? 'FULL' : editHalfChoice;
@@ -127,58 +117,13 @@ export const StudentOrdersPage: React.FC = () => {
         halfTiffinChoice: choiceToSend,
         quantity: editQuantity,
       });
-      setMsg({ text: `Order #${editingOrder.id} updated successfully!`, type: 'success' });
+      setMsg({ text: `Order updated!`, type: 'success' });
       setEditingOrder(null);
       await loadData();
     } catch (err: any) {
-      setMsg({ text: err.message || 'Failed to update order. Cutoff may have passed.', type: 'error' });
+      setMsg({ text: err.message || 'Failed to update order.', type: 'error' });
     } finally {
       setSavingEdit(false);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">Confirmed</span>;
-      case 'CANCELLED':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-100 text-slate-600 border border-slate-200">Cancelled</span>;
-      case 'CANCELLED_BY_ADMIN':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-red-100 text-red-800 border border-red-200">Cancelled by Kitchen</span>;
-      case 'DELIVERED':
-      case 'COMPLETED':
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 border border-blue-200">Delivered ✓</span>;
-      default:
-        return <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-100 text-slate-800 border border-slate-200">{status}</span>;
-    }
-  };
-
-  const yesterdayObj = new Date();
-  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
-  const yesterdayStr = new Date(yesterdayObj.getTime() - yesterdayObj.getTimezoneOffset() * 60000)
-    .toISOString()
-    .split('T')[0];
-
-  const formatPartitionDate = (dateStr: string) => {
-    if (!dateStr) return { title: 'Unknown Date', subtitle: '', isToday: false, isYesterday: false };
-    if (dateStr === todayStr) {
-      return { title: "Today's Orders", subtitle: formatDateDDMMYYYY(dateStr), isToday: true, isYesterday: false };
-    }
-    if (dateStr === yesterdayStr) {
-      return { title: 'Yesterday', subtitle: formatDateDDMMYYYY(dateStr), isToday: false, isYesterday: true };
-    }
-    try {
-      const [y, m, d] = dateStr.split('-').map(Number);
-      const dt = new Date(y, m - 1, d);
-      const weekday = dt.toLocaleDateString('en-IN', { weekday: 'long' });
-      return {
-        title: `${weekday}, ${formatDateDDMMYYYY(dateStr)}`,
-        subtitle: '',
-        isToday: false,
-        isYesterday: false,
-      };
-    } catch {
-      return { title: formatDateDDMMYYYY(dateStr), subtitle: '', isToday: false, isYesterday: false };
     }
   };
 
@@ -187,521 +132,200 @@ export const StudentOrdersPage: React.FC = () => {
     if (activeTab === 'TODAY') return isToday;
     if (activeTab === 'PAST') return !isToday;
     return true;
-  });
-
-  // Sort orders descending by orderDate, then by id desc
-  const sortedOrders = [...filteredOrders].sort((a, b) => {
+  }).sort((a, b) => {
     const dateComp = (b.orderDate || '').localeCompare(a.orderDate || '');
     if (dateComp !== 0) return dateComp;
     return (b.id || 0) - (a.id || 0);
   });
 
-  // Group by orderDate for Date Partitioning
-  const groupedOrders: { date: string; orders: Order[] }[] = [];
-  sortedOrders.forEach((o) => {
-    const d = o.orderDate || 'UNKNOWN';
-    let group = groupedOrders.find((g) => g.date === d);
-    if (!group) {
-      group = { date: d, orders: [] };
-      groupedOrders.push(group);
-    }
-    group.orders.push(o);
-  });
-
-  const todayOrdersCount = orders.filter((o) => o.orderDate === todayStr).length;
-  const pastOrdersCount = orders.filter((o) => o.orderDate !== todayStr).length;
-
   return (
-    <div className="max-w-4xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6 pb-24 md:pb-8">
+    <div className="min-h-screen bg-slate-50 pb-32 font-sans">
+      
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
-            <ChefHat className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
-            <span>My Dinner Orders</span>
-          </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Full history of your orders with real-time status and live order editing
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/student/dashboard"
-            className="px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Utensils className="w-3.5 h-3.5" />
-            <span>Browse Menu</span>
-          </Link>
-          <button
-            onClick={loadData}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 shadow-xs"
-            title="Refresh Orders"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-        </div>
+      <div className="bg-white pt-2 pb-4 px-4 shadow-sm border-b border-slate-100 flex items-center justify-between">
+        <h1 className="text-xl font-black text-slate-900 tracking-tight">Your Orders</h1>
+        <button onClick={loadData} className="p-2 rounded-full bg-slate-50 border border-slate-100 text-slate-500 hover:bg-slate-100">
+          <RefreshCw className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Alert toast */}
       {msg && (
-        <div
-          className={`p-3.5 rounded-2xl text-xs font-bold flex items-start justify-between gap-3 animate-fadeIn ${
-            msg.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
-              : 'bg-red-50 text-red-900 border border-red-200'
-          }`}
-        >
-          <div className="flex items-start gap-2">
-            {msg.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            )}
+        <div className="mx-4 mt-4 p-3 rounded-xl bg-slate-800 text-white text-xs font-bold flex items-center justify-between shadow-lg animate-fadeIn">
+          <div className="flex items-center gap-2">
+            {msg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-400" />}
             <span>{msg.text}</span>
           </div>
-          <button onClick={() => setMsg(null)} className="shrink-0 text-slate-400 hover:text-slate-700">
-            <X className="w-4 h-4" />
-          </button>
+          <button onClick={() => setMsg(null)}><X className="w-4 h-4 text-slate-400" /></button>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-        <button
-          onClick={() => setActiveTab('ALL')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-            activeTab === 'ALL'
-              ? 'bg-orange-500 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          All Orders ({orders.length})
+      <div className="flex gap-2 px-4 mt-4 pb-2 overflow-x-auto hide-scrollbar">
+        <button onClick={() => setActiveTab('ALL')} className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'ALL' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+          All Orders
         </button>
-        <button
-          onClick={() => setActiveTab('TODAY')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-            activeTab === 'TODAY'
-              ? 'bg-orange-500 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Today's Orders ({todayOrdersCount})
+        <button onClick={() => setActiveTab('TODAY')} className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'TODAY' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+          Today
         </button>
-        <button
-          onClick={() => setActiveTab('PAST')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-            activeTab === 'PAST'
-              ? 'bg-orange-500 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Past Orders ({pastOrdersCount})
+        <button onClick={() => setActiveTab('PAST')} className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'PAST' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+          Past Orders
         </button>
       </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-slate-100 animate-pulse rounded-2xl border border-slate-200/60" />
-          ))}
-        </div>
-      ) : filteredOrders.length === 0 ? (
-        <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-slate-200 shadow-sm max-w-lg mx-auto space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
-            🍱
+      <div className="px-4 mt-4 space-y-4">
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => <div key={i} className="h-32 bg-slate-200/50 animate-pulse rounded-3xl" />)}
           </div>
-          <div>
-            <h3 className="font-black text-slate-800 text-lg">
-              {activeTab === 'TODAY'
-                ? "No Orders Placed For Tonight Yet"
-                : activeTab === 'PAST'
-                ? 'No Past Orders'
-                : 'No Orders Placed Yet'}
-            </h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Check out tonight's dinner menu and place your homestyle tiffin with 1 click!
-            </p>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl mx-auto mb-4">🍽️</div>
+            <h3 className="font-black text-slate-800 text-lg">No orders found</h3>
+            <p className="text-sm text-slate-500 mt-1">Looks like you haven't ordered yet.</p>
           </div>
-          <div>
-            <Link
-              to="/student/dashboard"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-amber-600 transition-all active:scale-95"
-            >
-              <Utensils className="w-4 h-4" />
-              <span>Browse Tonight's Menu</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {groupedOrders.map((group) => {
-            const dateMeta = formatPartitionDate(group.date);
-            const totalTiffins = group.orders.reduce((sum, o) => sum + (o.quantity || 1), 0);
-            const totalAmount = group.orders.reduce((sum, o) => sum + Number(o.priceAtOrder || 0), 0);
-
+        ) : (
+          filteredOrders.map((o) => {
+            const isToday = o.orderDate === todayStr;
+            const isDelivered = o.status === 'DELIVERED' || o.status === 'COMPLETED';
+            const isCancelled = o.status?.includes('CANCELLED');
+            
             return (
-              <div key={group.date} className="space-y-2.5">
-                {/* ── Date Partition Header ── */}
-                <div
-                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl border transition-all ${
-                    dateMeta.isToday
-                      ? 'bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-50/40 border-orange-200 shadow-2xs'
-                      : dateMeta.isYesterday
-                      ? 'bg-slate-100/90 border-slate-200/90'
-                      : 'bg-slate-50/90 border-slate-200/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-xs ${
-                        dateMeta.isToday
-                          ? 'bg-orange-500 text-white shadow-orange-500/20'
-                          : dateMeta.isYesterday
-                          ? 'bg-slate-700 text-white'
-                          : 'bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      <Calendar className="w-4 h-4" />
+              <div key={o.id} className="bg-white rounded-3xl p-4 shadow-xs border border-slate-100 relative">
+                {isToday && (
+                  <span className="absolute -top-2.5 right-4 px-2 py-0.5 bg-brand-500 text-white text-[9px] font-black uppercase tracking-wider rounded-md shadow-sm">
+                    Today
+                  </span>
+                )}
+                
+                <div className="flex items-start justify-between mb-3 border-b border-slate-50 pb-3">
+                  <div className="flex gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-amber-100 flex items-center justify-center text-xl shadow-inner shrink-0">
+                      🍱
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm sm:text-base font-black text-slate-900">
-                          {dateMeta.title}
-                        </span>
-                        {dateMeta.isToday && (
-                          <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
-                            Tonight
-                          </span>
-                        )}
-                        {dateMeta.subtitle && (
-                          <span className="text-xs text-slate-500 font-semibold">
-                            • {dateMeta.subtitle}
-                          </span>
-                        )}
-                      </div>
+                      <h4 className="font-black text-slate-900 text-sm">Hadkar Meals</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{user?.hostelName || 'Hostel Delivery'}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{formatDateDDMMYYYY(o.orderDate || '')}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600 self-end sm:self-center">
-                    <span className="bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-slate-700 shadow-2xs text-[11px] font-bold">
-                      {totalTiffins} {totalTiffins === 1 ? 'Tiffin' : 'Tiffins'} ({group.orders.length} {group.orders.length === 1 ? 'order' : 'orders'})
-                    </span>
-                    <span className="bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-slate-900 font-black shadow-2xs text-[11px]">
-                      ₹{totalAmount.toFixed(0)}
-                    </span>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Amount</span>
+                    <span className="text-sm font-black text-slate-900">₹{Number(o.priceAtOrder || 0).toFixed(0)}</span>
                   </div>
                 </div>
 
-                {/* ── Orders For This Date ── */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xs">
-                  {group.orders.map((o) => {
-                    const isDelivered = o.status === 'DELIVERED' || o.status === 'COMPLETED';
-                    const isDalRice = o.orderType === 'HALF' && o.halfTiffinChoice === 'DAL_RICE';
-                    const isToday = o.orderDate === todayStr;
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <span className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">{o.quantity}</span>
+                    <span>× {o.orderType === 'FULL' ? 'Full Tiffin' : 'Half Tiffin'} ({o.halfTiffinChoice === 'DAL_RICE' ? 'Dal Rice' : o.selectedSabzi})</span>
+                  </div>
+                  {o.extraRotis && o.extraRotis > 0 ? (
+                    <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mt-1 pl-6">
+                      +{o.extraRotis} Extra Rotis
+                    </div>
+                  ) : null}
+                </div>
 
-                    return (
-                      <div
-                        key={o.id}
-                        className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-slate-50/50 transition-colors"
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shrink-0 mt-0.5 ${
-                            isDelivered ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-600'
-                          }`}>
-                            {isDelivered ? '✓' : '🍱'}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-black text-slate-900 text-base leading-tight">
-                                {o.quantity && o.quantity > 1 ? `${o.quantity}× ` : ''}
-                                {o.orderType === 'FULL' ? 'Full Tiffin' : 'Half Tiffin'}
-                                {' — '}
-                                {isDalRice ? 'Dal + Steamed Rice' : o.selectedSabzi || "Today's Sabzi"}
-                              </h4>
-                              {isToday && (
-                                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider">
-                                  Tonight
-                                </span>
-                              )}
-                              {getStatusBadge(o.status)}
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-500 mt-1">
-                              <span className="flex items-center gap-1 font-semibold text-slate-700">
-                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                {formatDateDDMMYYYY(o.orderDate)}
-                              </span>
-                              <span>•</span>
-                              <span className="font-black text-slate-900">₹{Number(o.priceAtOrder).toFixed(0)}</span>
-                              {o.extraRotis && o.extraRotis > 0 ? (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-orange-700 font-bold">+{o.extraRotis} Extra Rotis</span>
-                                </>
-                              ) : null}
-                              {o.cancellationReason && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-red-600 font-medium italic">Reason: {o.cancellationReason}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Actions: Edit & Cancel right from My Orders */}
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                          {o.canCancel && o.status === 'CONFIRMED' ? (
-                            <>
-                              <button
-                                onClick={() => openEditModal(o)}
-                                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-1.5 shadow-2xs"
-                                title="Edit portion or sabzi"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-brand-600" />
-                                <span>Edit Order</span>
-                              </button>
-                              <button
-                                onClick={() => handleCancel(o.id)}
-                                disabled={cancellingId === o.id}
-                                className="px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 transition-colors flex items-center gap-1 shadow-2xs disabled:opacity-50"
-                              >
-                                <XCircle className="w-3.5 h-3.5" />
-                                <span>{cancellingId === o.id ? 'Cancelling...' : 'Cancel'}</span>
-                              </button>
-                            </>
-                          ) : o.status === 'CONFIRMED' ? (
-                            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100">
-                              <Lock className="w-3 h-3 text-slate-400" />
-                              <span>Prep begun (Locked)</span>
-                            </span>
-                          ) : isDelivered ? (
-                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                              Enjoy your meal! 🍽️
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="flex items-center justify-between">
+                  <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg ${isDelivered ? 'bg-emerald-50 text-emerald-700' : isCancelled ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-700'}`}>
+                    {isDelivered ? '✓ Delivered' : isCancelled ? '× Cancelled' : '● Preparing'}
+                  </span>
+                  
+                  <div className="flex gap-2">
+                    {o.canCancel && o.status === 'CONFIRMED' && (
+                      <>
+                        <button onClick={() => handleCancel(o.id)} className="text-[11px] font-bold text-red-600 border border-red-200 px-3 py-1.5 rounded-xl hover:bg-red-50">Cancel</button>
+                        <button onClick={() => openEditModal(o)} className="text-[11px] font-bold text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl hover:bg-slate-50">Edit</button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            )
+          })
+        )}
+      </div>
 
       {/* ── EDIT ORDER MODAL ── */}
       {editingOrder && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center animate-fadeIn p-0 sm:p-4">
+          <div className="bg-slate-50 rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] animate-slideUp">
+            
+            <div className="flex items-center justify-between p-5 pb-3 bg-white rounded-t-[2rem] sm:rounded-t-[2rem] border-b border-slate-100">
               <div>
-                <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Edit3 className="w-5 h-5 text-brand-600" />
-                  <span>Edit Order #{editingOrder.id}</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Update your portion, sabzi, or rotis before the kitchen begins cooking
-                </p>
+                <h3 className="text-lg font-black text-slate-900">Edit Order</h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditingOrder(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-              >
+              <button onClick={() => setEditingOrder(null)} className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Portion Selection */}
-            <div>
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">
-                Choose Portion
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditPortion('FULL');
-                    setEditHalfChoice('SABZI_ROTI');
-                  }}
-                  className={`p-3 rounded-2xl border-2 text-left transition-all ${
-                    editPortion === 'FULL'
-                      ? 'border-orange-500 bg-orange-50/70 shadow-xs'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 block">Full Tiffin</span>
-                      <span className="text-[10px] text-slate-500">Sabzi + 4 Roti + Dal + Rice</span>
-                    </div>
-                    <span className="text-sm font-black text-orange-600">₹{fullPrice}</span>
+            <div className="p-4 overflow-y-auto space-y-4">
+              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded bg-orange-100 border border-orange-500 flex items-center justify-center shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    </span>
+                    <span className="text-sm font-black text-slate-900 leading-tight block">
+                      Change Portion
+                    </span>
                   </div>
-                </button>
+                </div>
+                
+                <div className="flex gap-2 bg-slate-50 p-1 rounded-xl border border-slate-200 mb-4">
+                  <button onClick={() => { setEditPortion('FULL'); setEditHalfChoice('SABZI_ROTI'); }} className={`flex-1 py-2 text-xs font-black rounded-lg transition-colors ${editPortion === 'FULL' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500'}`}>Full Tiffin</button>
+                  <button onClick={() => setEditPortion('HALF')} className={`flex-1 py-2 text-xs font-black rounded-lg transition-colors ${editPortion === 'HALF' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500'}`}>Half Tiffin</button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setEditPortion('HALF')}
-                  className={`p-3 rounded-2xl border-2 text-left transition-all ${
-                    editPortion === 'HALF'
-                      ? 'border-amber-500 bg-amber-50/70 shadow-xs'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 block">Half Tiffin</span>
-                      <span className="text-[10px] text-slate-500">Choice of 1 Item</span>
-                    </div>
-                    <span className="text-sm font-black text-amber-600">₹{halfPrice}</span>
+                {editPortion === 'HALF' && (
+                  <div className="flex gap-2 mb-4 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                    <button onClick={() => setEditHalfChoice('SABZI_ROTI')} className={`flex-1 py-1.5 text-[11px] font-black rounded-lg ${editHalfChoice === 'SABZI_ROTI' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500'}`}>Sabzi + Roti</button>
+                    <button onClick={() => setEditHalfChoice('DAL_RICE')} className={`flex-1 py-1.5 text-[11px] font-black rounded-lg ${editHalfChoice === 'DAL_RICE' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500'}`}>Dal + Rice</button>
                   </div>
-                </button>
+                )}
+
+                {!(editPortion === 'HALF' && editHalfChoice === 'DAL_RICE') && sabziOptions.length > 0 && (
+                  <div className="mb-4">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Sabzi Choice</span>
+                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+                      {sabziOptions.map(s => (
+                        <button key={s.id} onClick={() => setEditSabzi(s.name)} className={`shrink-0 px-3 py-1.5 rounded-xl border text-[11px] font-bold ${editSabzi === s.name ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm' : 'border-slate-200 bg-white text-slate-700'}`}>
+                          {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-2">
+                  <span className="text-[11px] font-black text-slate-700 block">Quantity</span>
+                  <div className="flex items-center gap-3 bg-white rounded-lg p-1 border border-slate-200 shadow-xs">
+                    <button onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))} className="w-6 h-6 flex items-center justify-center text-slate-600 rounded"><Minus className="w-3 h-3" /></button>
+                    <span className="text-xs font-black w-3 text-center">{editQuantity}</span>
+                    <button onClick={() => setEditQuantity(editQuantity + 1)} className="w-6 h-6 flex items-center justify-center text-brand-600 rounded"><Plus className="w-3 h-3" /></button>
+                  </div>
+                </div>
+
+                {!(editPortion === 'HALF' && editHalfChoice === 'DAL_RICE') && (
+                  <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-[11px] font-black text-slate-700 block">Extra Roti (+₹6)</span>
+                    <div className="flex items-center gap-3 bg-white rounded-lg p-1 border border-slate-200 shadow-xs">
+                      <button onClick={() => setEditExtraRotis(Math.max(0, editExtraRotis - 1))} className="w-6 h-6 flex items-center justify-center text-slate-600 rounded"><Minus className="w-3 h-3" /></button>
+                      <span className="text-xs font-black w-3 text-center">{editExtraRotis}</span>
+                      <button onClick={() => setEditExtraRotis(editExtraRotis + 1)} className="w-6 h-6 flex items-center justify-center text-brand-600 rounded"><Plus className="w-3 h-3" /></button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Half Choice Options */}
-            {editPortion === 'HALF' && (
-              <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
-                <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">
-                  Half Tiffin Type
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditHalfChoice('SABZI_ROTI')}
-                    className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
-                      editHalfChoice === 'SABZI_ROTI'
-                        ? 'border-amber-600 bg-white text-amber-950 shadow-2xs'
-                        : 'border-amber-200 bg-amber-50/50 text-slate-600'
-                    }`}
-                  >
-                    🥘 Sabzi + 4 Roti
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditHalfChoice('DAL_RICE')}
-                    className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
-                      editHalfChoice === 'DAL_RICE'
-                        ? 'border-amber-600 bg-white text-amber-950 shadow-2xs'
-                        : 'border-amber-200 bg-amber-50/50 text-slate-600'
-                    }`}
-                  >
-                    🍲 Dal + Steamed Rice
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Sabzi Selector */}
-            {!(editPortion === 'HALF' && editHalfChoice === 'DAL_RICE') && (
-              <div>
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">
-                  Select Tonight's Sabzi
-                </span>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-0.5">
-                  {sabziOptions.map((s) => {
-                    const isOutOfStock = s.active === false;
-                    const isSelected = editSabzi === s.name;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        disabled={isOutOfStock}
-                        onClick={() => !isOutOfStock && setEditSabzi(s.name)}
-                        className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
-                          isOutOfStock
-                            ? 'border-red-200 bg-red-50/60 opacity-60 cursor-not-allowed'
-                            : isSelected
-                            ? 'border-brand-600 bg-brand-50 text-brand-900 shadow-2xs'
-                            : 'border-slate-200 text-slate-700 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>🥘 {s.name}</span>
-                          {isOutOfStock && <span className="text-[9px] text-red-600 font-black">Sold Out</span>}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Quantity and Extra Rotis */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <span className="text-xs font-bold text-slate-700 block mb-1.5">Quantity</span>
-                <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-black text-slate-700 hover:bg-slate-100"
-                  >
-                    -
-                  </button>
-                  <span className="font-black text-slate-900 flex-1 text-center text-sm">{editQuantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setEditQuantity(Math.min(10, editQuantity + 1))}
-                    className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-black hover:bg-brand-700"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {!(editPortion === 'HALF' && editHalfChoice === 'DAL_RICE') && (
-                <div>
-                  <span className="text-xs font-bold text-slate-700 block mb-1.5">Extra Rotis (+₹6)</span>
-                  <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setEditExtraRotis(Math.max(0, editExtraRotis - 1))}
-                      className="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-black text-slate-700 hover:bg-slate-100"
-                    >
-                      -
-                    </button>
-                    <span className="font-black text-slate-900 flex-1 text-center text-sm">{editExtraRotis}</span>
-                    <button
-                      type="button"
-                      onClick={() => setEditExtraRotis(Math.min(15, editExtraRotis + 1))}
-                      className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-black hover:bg-brand-700"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Total Amount</span>
-                <span className="text-xl font-black text-slate-900">₹{editTotalPrice}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingOrder(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100"
-                >
-                  Discard
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveEditOrder}
-                  disabled={savingEdit}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black shadow-md shadow-orange-500/20 disabled:opacity-50 transition-all"
-                >
-                  {savingEdit ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
+            <div className="p-4 bg-white border-t border-slate-200 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] sm:rounded-b-[2rem]">
+              <button onClick={handleSaveEditOrder} disabled={savingEdit} className="w-full py-4 rounded-2xl bg-brand-600 active:scale-95 text-white font-black text-base shadow-lg shadow-brand-600/30 flex items-center justify-between px-6">
+                <span className="text-[10px] font-bold uppercase tracking-wider block">Total ₹{editTotalPrice}</span>
+                <div className="flex items-center gap-2">{savingEdit ? 'Saving...' : 'Update Order'} <ChevronRight className="w-5 h-5" /></div>
+              </button>
             </div>
           </div>
         </div>

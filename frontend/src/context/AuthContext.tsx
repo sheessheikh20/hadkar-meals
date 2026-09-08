@@ -5,7 +5,6 @@ import { api } from '../api/client';
 interface AuthContextType {
   user: AuthResponse | null;
   isAdmin: boolean;
-  isSuperAdmin: boolean;
   isClientAdmin: boolean;
   isStudent: boolean;
   isLoading: boolean;
@@ -74,13 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isSuperAdmin = user?.role === 'ROLE_SUPER_ADMIN';
   const isClientAdmin = user?.role === 'ROLE_ADMIN';
-  const isAdmin = isClientAdmin || isSuperAdmin;
+  const isAdmin = isClientAdmin;
   const isStudent = user?.role === 'ROLE_STUDENT';
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isSuperAdmin, isClientAdmin, isStudent, isLoading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, isAdmin, isClientAdmin, isStudent, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -27,7 +27,7 @@ import { AdminServiceStatusPage } from './pages/AdminServiceStatusPage';
 import { AdminReportsPage } from './pages/AdminReportsPage';
 import { AdminSettingsPage } from './pages/AdminSettingsPage';
 import { AdminAuditLogsPage } from './pages/AdminAuditLogsPage';
-import { SuperAdminDashboardPage } from './pages/SuperAdminDashboardPage';
+import { SuperAdminDashboardPage as AdminSystemPage } from './pages/SuperAdminDashboardPage';
 
 // Protected Route wrappers
 const ProtectedStudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,13 +45,7 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
   return <>{children}</>;
 };
 
-const ProtectedSuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isSuperAdmin, isLoading } = useAuth();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-xs font-bold text-slate-400">Loading Hadkar Meals...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!isSuperAdmin) return <Navigate to="/admin/dashboard" replace />;
-  return <>{children}</>;
-};
+
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isStudent } = useAuth();
@@ -68,10 +62,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const RootRedirect: React.FC = () => {
-  const { user, isSuperAdmin, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-xs font-bold text-slate-400">Loading Hadkar Meals...</div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
   if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
   return <Navigate to="/student/dashboard" replace />;
 };
@@ -91,8 +84,8 @@ export const App: React.FC = () => {
             <Route path="/complete-profile" element={<CompleteProfilePage />} />
             <Route path="/register-profile" element={<RegisterProfilePage />} />
 
-            {/* Super Admin Console */}
-            <Route path="/super-admin" element={<ProtectedSuperAdminRoute><SuperAdminDashboardPage /></ProtectedSuperAdminRoute>} />
+            {/* System Console */}
+            <Route path="/admin/system" element={<ProtectedAdminRoute><AdminSystemPage /></ProtectedAdminRoute>} />
 
             {/* Student Pages */}
             <Route path="/student/dashboard" element={<ProtectedStudentRoute><StudentDashboardPage /></ProtectedStudentRoute>} />

@@ -10,28 +10,16 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  IndianRupee,
-  RefreshCw,
-  ShoppingBag,
-  MapPin,
   Plus,
   Minus,
-  XCircle,
-  Lock,
-  Edit3,
   X,
-  Sparkles,
-  Bell,
-  Trash2,
   ShoppingCart,
-  ChevronDown,
-  ChevronUp,
-  CheckCheck,
-  Zap
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import { requestNotificationPermission, onForegroundMessage } from '../utils/firebase';
 
-// ─────── CART ITEM TYPE ───────
+// ─────── TYPES ───────
 interface CartItem {
   localId: string;
   orderType: OrderType;
@@ -41,314 +29,15 @@ interface CartItem {
   quantity: number;
 }
 
-function calcCartItemPrice(
-  item: CartItem,
-  halfPrice: number,
-  fullPrice: number
-): number {
+function calcCartItemPrice(item: CartItem, halfPrice: number, fullPrice: number): number {
   const baseUnit = item.orderType === 'FULL' ? fullPrice : halfPrice;
   const rotiAddon = (item.orderType === 'HALF' && item.halfTiffinChoice === 'DAL_RICE') ? 0 : item.extraRotis * 6;
   return baseUnit * item.quantity + rotiAddon;
 }
 
-function cartItemLabel(item: CartItem): string {
-  if (item.orderType === 'FULL') {
-    return `Full Tiffin${item.quantity > 1 ? ` ×${item.quantity}` : ''} — ${item.selectedSabzi || 'Sabzi'}${item.extraRotis > 0 ? ` +${item.extraRotis} Roti` : ''}`;
-  }
-  if (item.halfTiffinChoice === 'DAL_RICE') {
-    return `Half Tiffin${item.quantity > 1 ? ` ×${item.quantity}` : ''} — Dal + Steam Rice`;
-  }
-  return `Half Tiffin${item.quantity > 1 ? ` ×${item.quantity}` : ''} — ${item.selectedSabzi || 'Sabzi'}${item.extraRotis > 0 ? ` +${item.extraRotis} Roti` : ''}`;
-}
-
-// ─────── CART ITEM CONFIGURATOR ───────
-interface CartItemConfigProps {
-  item: CartItem;
-  sabziOptions: MenuItem[];
-  halfPrice: number;
-  fullPrice: number;
-  isDalRiceClosed?: boolean;
-  onChange: (updated: CartItem) => void;
-  onRemove: () => void;
-  onSplit?: () => void;
-  onAddAnother?: () => void;
-  index: number;
-}
-
-const CartItemConfig: React.FC<CartItemConfigProps> = ({
-  item, sabziOptions, halfPrice, fullPrice, isDalRiceClosed, onChange, onRemove, onSplit, onAddAnother, index
-}) => {
-  const [expanded, setExpanded] = useState(true);
-  const price = calcCartItemPrice(item, halfPrice, fullPrice);
-
-  return (
-    <div className="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs transition-all">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
-        <div className="flex items-center gap-2.5">
-          <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-            {index + 1}
-          </span>
-          <div>
-            <span className="text-sm font-black text-slate-900 block leading-tight">{cartItemLabel(item)}</span>
-            <span className="text-xs font-bold text-brand-600">₹{price}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
-          >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          <button
-            onClick={onRemove}
-            className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      {expanded && (
-        <div className="p-4 space-y-4">
-          {/* Portion Type */}
-          <div>
-            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">Select Portion</span>
-            <div className="grid grid-cols-2 gap-2">
-              {/* Full Tiffin */}
-              <button
-                type="button"
-                onClick={() => onChange({ ...item, orderType: 'FULL', halfTiffinChoice: 'SABZI_ROTI' })}
-                className={`relative rounded-2xl border-2 p-3 text-left transition-all focus:outline-none ${
-                  item.orderType === 'FULL'
-                    ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-amber-50 shadow-md shadow-orange-100'
-                    : 'border-slate-200 bg-white hover:border-orange-300 hover:bg-orange-50/40'
-                }`}
-              >
-                {item.orderType === 'FULL' && (
-                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  </span>
-                )}
-                <div className="text-xl mb-1">🍱</div>
-                <div className="text-sm font-black text-slate-900 leading-tight">Full Tiffin</div>
-                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Sabzi · Roti · Dal · Rice</div>
-                <div className={`mt-2 text-base font-black ${item.orderType === 'FULL' ? 'text-orange-600' : 'text-slate-600'}`}>
-                  ₹{fullPrice}
-                </div>
-              </button>
-
-              {/* Half Tiffin */}
-              <button
-                type="button"
-                onClick={() => onChange({ ...item, orderType: 'HALF' })}
-                className={`relative rounded-2xl border-2 p-3 text-left transition-all focus:outline-none ${
-                  item.orderType === 'HALF'
-                    ? 'border-amber-500 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-md shadow-amber-100'
-                    : 'border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/40'
-                }`}
-              >
-                {item.orderType === 'HALF' && (
-                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  </span>
-                )}
-                <div className="text-xl mb-1">🥘</div>
-                <div className="text-sm font-black text-slate-900 leading-tight">Half Tiffin</div>
-                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Sabzi+Roti or Dal+Rice</div>
-                <div className={`mt-2 text-base font-black ${item.orderType === 'HALF' ? 'text-amber-600' : 'text-slate-600'}`}>
-                  ₹{halfPrice}
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Half Tiffin Sub-choice */}
-          {item.orderType === 'HALF' && (
-            <div>
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">Half Tiffin Combo</span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...item, halfTiffinChoice: 'SABZI_ROTI' })}
-                  className={`py-2 px-3 rounded-xl border-2 text-left transition-all flex items-center gap-2 ${
-                    item.halfTiffinChoice === 'SABZI_ROTI'
-                      ? 'border-amber-500 bg-amber-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <span className="text-lg">🥘</span>
-                  <div>
-                    <span className="text-xs font-black text-slate-900 block">Sabzi + 4 Roti</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  disabled={isDalRiceClosed}
-                  onClick={() => !isDalRiceClosed && onChange({ ...item, halfTiffinChoice: 'DAL_RICE', extraRotis: 0 })}
-                  className={`py-2 px-3 rounded-xl border-2 text-left transition-all flex items-center gap-2 ${
-                    isDalRiceClosed
-                      ? 'border-red-200 bg-red-50/60 opacity-60 cursor-not-allowed'
-                      : item.halfTiffinChoice === 'DAL_RICE'
-                      ? 'border-amber-500 bg-amber-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <span className="text-lg">🍲</span>
-                  <div>
-                    <span className="text-xs font-black text-slate-900 block">Dal + Steam Rice</span>
-                    {isDalRiceClosed && (
-                      <span className="text-[10px] text-red-600 font-black block">❌ Orders Closed</span>
-                    )}
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Sabzi Selection */}
-          {!(item.orderType === 'HALF' && item.halfTiffinChoice === 'DAL_RICE') && sabziOptions.length > 0 && (
-            <div>
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">Choose Sabzi</span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {sabziOptions.map((s) => {
-                  const isSelected = item.selectedSabzi === s.name;
-                  const isOutOfStock = s.active === false;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      disabled={isOutOfStock}
-                      onClick={() => !isOutOfStock && onChange({ ...item, selectedSabzi: s.name })}
-                      className={`py-2 px-2.5 rounded-xl border-2 text-left transition-all ${
-                        isOutOfStock
-                          ? 'border-red-200 bg-red-50/60 opacity-60 cursor-not-allowed'
-                          : isSelected
-                          ? 'border-brand-600 bg-brand-50 shadow-sm'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <span className="text-xs font-bold text-slate-900 leading-tight line-clamp-2 block">{s.name}</span>
-                      {isOutOfStock ? (
-                        <span className="text-[10px] text-red-600 font-black block mt-0.5">❌ Sold Out</span>
-                      ) : isSelected ? (
-                        <span className="text-[10px] text-brand-600 font-black block mt-0.5">✓ Selected</span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Quantity + Extra Rotis Row */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Quantity */}
-            <div>
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-1.5">Qty</span>
-              <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...item, quantity: Math.max(1, item.quantity - 1) })}
-                  disabled={item.quantity <= 1}
-                  className="w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 flex items-center justify-center font-bold disabled:opacity-40 shrink-0"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-base font-black text-slate-900 flex-1 text-center">{item.quantity}</span>
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...item, quantity: Math.min(10, item.quantity + 1) })}
-                  className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Extra Rotis */}
-            {!(item.orderType === 'HALF' && item.halfTiffinChoice === 'DAL_RICE') ? (
-              <div>
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-1.5">Extra Roti (+₹6)</span>
-                <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => onChange({ ...item, extraRotis: Math.max(0, item.extraRotis - 1) })}
-                    disabled={item.extraRotis === 0}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 flex items-center justify-center font-bold disabled:opacity-40 shrink-0"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="text-base font-black text-slate-900 flex-1 text-center">{item.extraRotis}</span>
-                  <button
-                    type="button"
-                    onClick={() => onChange({ ...item, extraRotis: Math.min(15, item.extraRotis + 1) })}
-                    className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold shrink-0"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-end">
-                <div className="p-2 bg-slate-50 rounded-xl border border-slate-200 w-full text-center">
-                  <span className="text-[11px] text-slate-500 font-bold">No Rotis</span>
-                  <span className="block text-[10px] text-slate-400">Dal+Rice combo</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ── SPLIT / DIFFERENT SABZI BANNER ── */}
-          {item.quantity > 1 && onSplit && (
-            <div className="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-start gap-2.5">
-                <span className="text-xl shrink-0">💡</span>
-                <div>
-                  <p className="text-xs font-black text-amber-950">
-                    Want different vegetables in each of these {item.quantity} tiffins?
-                  </p>
-                  <p className="text-[11px] text-amber-800 mt-0.5">
-                    Currently both will have <strong>{item.selectedSabzi || "the selected sabzi"}</strong>. Tap "Split Tiffins" to choose different sabzis for each!
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onSplit}
-                className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-black shrink-0 transition-all shadow-sm flex items-center justify-center gap-1.5"
-              >
-                <span>🔀 Split into {item.quantity} Separate Tiffins</span>
-              </button>
-            </div>
-          )}
-
-          {/* Quick Add Another Tiffin */}
-          {onAddAnother && (
-            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={onAddAnother}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-bold transition-colors border border-orange-200"
-              >
-                <Plus className="w-3.5 h-3.5 text-orange-600" />
-                <span>+ Add Another {item.orderType === 'FULL' ? 'Full' : 'Half'} Tiffin</span>
-              </button>
-              <span className="text-xs font-bold text-slate-500">₹{price}</span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ─────── MAIN COMPONENT ───────
 export const StudentDashboardPage: React.FC = () => {
   const { user } = useAuth();
-
   const [meals, setMeals] = useState<Meal[]>([]);
   const [balance, setBalance] = useState<number>(0);
   const [statusInfo, setStatusInfo] = useState<{ serviceStatus: string; serviceBannerText: string; alerts: string[] }>({
@@ -360,8 +49,9 @@ export const StudentDashboardPage: React.FC = () => {
   const [orderActionLoading, setOrderActionLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Cart state
+  // Cart & UI State
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartSheetOpen, setIsCartSheetOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -382,6 +72,7 @@ export const StudentDashboardPage: React.FC = () => {
       const dinner = mealsData.find((m: any) => m.mealType === 'DINNER') || mealsData[0];
       if (!dinner || dinner.status !== 'PUBLISHED' || dinner.cutoffReached || dinner.notOpenYet) {
         setCart([]);
+        setIsCartSheetOpen(false);
       }
     } catch (e: any) {
       console.error(e);
@@ -393,7 +84,6 @@ export const StudentDashboardPage: React.FC = () => {
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 15000);
-
     const unsubscribe = onForegroundMessage((payload) => {
       setMessage({
         text: `${payload.notification?.title || 'Notification'}: ${payload.notification?.body || ''}`,
@@ -401,13 +91,13 @@ export const StudentDashboardPage: React.FC = () => {
       });
       loadData();
     });
-
     return () => {
       clearInterval(interval);
       unsubscribe();
     };
   }, [loadData]);
 
+  // Derived State
   const dinnerMeal = meals.find((m) => m.mealType === 'DINNER') || (meals.length > 0 ? meals[0] : null);
   const sabziOptions = dinnerMeal?.menuItems?.filter((i) => i.category === 'SABZI') || [];
   const halfPrice = dinnerMeal ? Number(dinnerMeal.halfPrice) : 65;
@@ -421,53 +111,18 @@ export const StudentDashboardPage: React.FC = () => {
     : (dinnerMeal?.userActiveOrder ? [dinnerMeal.userActiveOrder] : []);
 
   const validActiveOrders = activeOrders.filter((o) => o.status !== 'CANCELLED');
-  const isOrdersOpen = Boolean(
-    dinnerMeal &&
-    dinnerMeal.status === 'PUBLISHED' &&
-    !dinnerMeal.cutoffReached &&
-    !dinnerMeal.notOpenYet &&
-    dinnerMeal.open !== false
-  );
+  const isOrdersOpen = Boolean(dinnerMeal && dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached && !dinnerMeal.notOpenYet && dinnerMeal.open !== false);
   const isOrdersClosed = !isOrdersOpen;
   const allDelivered = validActiveOrders.length > 0 && validActiveOrders.every((o) => o.status === 'DELIVERED');
 
-  // Auto pre-populate 1 order card if cart is empty and student hasn't ordered yet
-  useEffect(() => {
-    if (
-      dinnerMeal &&
-      dinnerMeal.status === 'PUBLISHED' &&
-      !dinnerMeal.cutoffReached &&
-      cart.length === 0 &&
-      activeOrders.length === 0 &&
-      sabziOptions.length > 0
-    ) {
-      setCart([
-        {
-          localId: `cart-initial-${Date.now()}`,
-          orderType: 'FULL',
-          halfTiffinChoice: 'SABZI_ROTI',
-          selectedSabzi: sabziOptions[0].name,
-          extraRotis: 0,
-          quantity: 1,
-        },
-      ]);
-    }
-  }, [dinnerMeal?.status, dinnerMeal?.id, activeOrders.length, sabziOptions.length]);
-
-  // Cart helpers
-  const addToCart = (type: OrderType) => {
-    if (!dinnerMeal || dinnerMeal.status !== 'PUBLISHED' || dinnerMeal.cutoffReached) {
-      setMessage({
-        text: '⚠️ Ordering is not open. The dinner menu has not been published yet or orders are closed.',
-        type: 'error',
-      });
-      return;
-    }
+  // Cart Operations
+  const addToCart = (type: OrderType, choice: HalfTiffinChoice = 'SABZI_ROTI') => {
+    if (isOrdersClosed) return;
     const defaultSabzi = sabziOptions[0]?.name || '';
     const newItem: CartItem = {
       localId: `cart-${Date.now()}-${Math.random()}`,
       orderType: type,
-      halfTiffinChoice: 'SABZI_ROTI',
+      halfTiffinChoice: choice,
       selectedSabzi: defaultSabzi,
       extraRotis: 0,
       quantity: 1,
@@ -480,102 +135,25 @@ export const StudentDashboardPage: React.FC = () => {
   };
 
   const removeCartItem = (localId: string) => {
-    setCart((prev) => prev.filter((c) => c.localId !== localId));
-  };
-
-  const splitCartItem = (localId: string) => {
     setCart((prev) => {
-      const idx = prev.findIndex((c) => c.localId === localId);
-      if (idx === -1) return prev;
-      const target = prev[idx];
-      if (target.quantity <= 1) return prev;
-
-      const newItems: CartItem[] = [];
-      const remainingSabzis = sabziOptions.filter((s) => s.name !== target.selectedSabzi);
-
-      for (let i = 0; i < target.quantity; i++) {
-        let chosenSabzi = target.selectedSabzi;
-        if (i > 0 && remainingSabzis.length > 0) {
-          chosenSabzi = remainingSabzis[(i - 1) % remainingSabzis.length].name;
-        }
-
-        newItems.push({
-          ...target,
-          localId: `cart-${Date.now()}-${i}-${Math.random()}`,
-          quantity: 1,
-          selectedSabzi: chosenSabzi,
-          extraRotis: i === 0 ? target.extraRotis : 0,
-        });
-      }
-
-      const copy = [...prev];
-      copy.splice(idx, 1, ...newItems);
-      return copy;
+      const next = prev.filter((c) => c.localId !== localId);
+      if (next.length === 0) setIsCartSheetOpen(false);
+      return next;
     });
   };
 
-  const addAnotherWithDifferentSabzi = (baseType: OrderType, currentSabzi: string) => {
-    const remaining = sabziOptions.filter((s) => s.name !== currentSabzi);
-    const nextSabzi = remaining[0]?.name || sabziOptions[0]?.name || '';
-    const newItem: CartItem = {
-      localId: `cart-${Date.now()}-${Math.random()}`,
-      orderType: baseType,
-      halfTiffinChoice: 'SABZI_ROTI',
-      selectedSabzi: nextSabzi,
-      extraRotis: 0,
-      quantity: 1,
-    };
-    setCart((prev) => [...prev, newItem]);
+  const cartTotal = cart.reduce((sum, item) => sum + calcCartItemPrice(item, halfPrice, fullPrice), 0);
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Group cart items to show quick add/minus in menu list
+  const getQuantityForType = (type: OrderType, choice: HalfTiffinChoice) => {
+    return cart.filter(c => c.orderType === type && c.halfTiffinChoice === choice).reduce((sum, item) => sum + item.quantity, 0);
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + calcCartItemPrice(item, halfPrice, fullPrice), 0);
-  const totalTiffinsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Place all cart orders
   const handlePlaceAllOrders = async () => {
     if (!dinnerMeal || cart.length === 0) return;
-
-    // 1. Check if tonight's dinner orders are closed or not open yet or cutoff reached
-    if (dinnerMeal.status === 'CLOSED' || dinnerMeal.cutoffReached) {
-      setMessage({
-        text: `⛔ Orders for tonight's dinner are closed (Cutoff was ${formatTime12Hour(dinnerMeal.orderCutoffTime)}).`,
-        type: 'error',
-      });
-      return;
-    }
-    if (dinnerMeal.notOpenYet) {
-      setMessage({
-        text: `⏳ Orders for tonight's dinner open at ${formatTime12Hour(dinnerMeal.orderOpenTime)}.`,
-        type: 'error',
-      });
-      return;
-    }
-
-    // 2. Check if any cart item has a dish with closed orders
-    for (const item of cart) {
-      if (item.orderType === 'HALF' && item.halfTiffinChoice === 'DAL_RICE') {
-        if (isDalRiceClosed) {
-          setMessage({
-            text: `⚠️ Orders for "Dal + Steamed Rice" are currently closed by the kitchen. Please select Sabzi + Roti.`,
-            type: 'error',
-          });
-          return;
-        }
-      } else {
-        const sabziObj = sabziOptions.find((s) => s.name.toLowerCase() === (item.selectedSabzi || '').toLowerCase());
-        if (sabziObj && sabziObj.active === false) {
-          setMessage({
-            text: `⚠️ Orders for "${sabziObj.name}" are currently closed by the kitchen. Please select another vegetable.`,
-            type: 'error',
-          });
-          return;
-        }
-      }
-    }
-
+    
     setOrderActionLoading(true);
-    setMessage(null);
-
     let successCount = 0;
     let lastError = '';
 
@@ -598,427 +176,348 @@ export const StudentDashboardPage: React.FC = () => {
     }
 
     if (successCount > 0) {
-      setMessage({
-        text: `✅ ${successCount} order${successCount > 1 ? 's' : ''} placed successfully! Your dinner is confirmed.`,
-        type: 'success',
-      });
+      setMessage({ text: `✅ Order Placed Successfully!`, type: 'success' });
       setCart([]);
+      setIsCartSheetOpen(false);
     } else {
-      setMessage({ text: lastError || 'Failed to place orders. Please try again.', type: 'error' });
+      setMessage({ text: lastError || 'Failed to place orders.', type: 'error' });
     }
 
     setOrderActionLoading(false);
     await loadData();
   };
 
-  return (
-    <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
-      {/* Service Banner */}
-      <ServiceStatusBanner
-        serviceStatus={statusInfo.serviceStatus as any}
-        serviceBannerText={statusInfo.serviceBannerText}
-      />
-
-      {/* ── TOP HEADER: Welcome + Balance ── */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold shrink-0">
-              👤
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-xl font-black text-slate-900 truncate">
-                Hey, {user?.fullName?.split(' ')[0] || 'Customer'} 👋
-              </h1>
-              <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 flex-wrap">
-                <MapPin className="w-3 h-3 text-brand-600 shrink-0" />
-                <span className="truncate">{user?.hostelName || 'Delivery Location'}</span>
-                <span className="mx-0.5 hidden sm:inline">•</span>
-                <span className="hidden sm:inline">{formatDateDDMMYYYY(new Date())}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 text-right">
-              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Balance Due</span>
-              <span className={`text-sm sm:text-base font-black ${balance > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                ₹{Number(balance).toFixed(0)}
-              </span>
-            </div>
-
-            <button
-              onClick={async () => {
-                const token = await requestNotificationPermission();
-                setMessage(token
-                  ? { text: '🔔 Push notifications enabled!', type: 'success' }
-                  : { text: '⚠️ Notification permission not granted.', type: 'error' }
-                );
-              }}
-              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
-              title="Enable Notifications"
-            >
-              <Bell className="w-4 h-4 text-amber-600" />
-            </button>
-
-            <button
-              onClick={loadData}
-              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
-              title="Refresh"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+  // ─────── RENDERERS ───────
+  
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 rounded-full bg-slate-200 mb-2"></div>
+          <div className="h-4 w-24 bg-slate-200 rounded"></div>
         </div>
       </div>
+    );
+  }
 
-      {/* ── ALERT TOAST ── */}
+  return (
+    <div className="min-h-screen bg-slate-50 pb-32 font-sans">
+      <ServiceStatusBanner serviceStatus={statusInfo.serviceStatus as any} serviceBannerText={statusInfo.serviceBannerText} />
+
+      {/* Hero / Date / Info */}
+      <div className="bg-white pt-2 pb-4 px-4 shadow-sm border-b border-slate-100">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">Today's Dinner</h1>
+          <div className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-600 uppercase tracking-wider flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {dinnerMeal ? `${formatTime12Hour(dinnerMeal.orderOpenTime)} - ${formatTime12Hour(dinnerMeal.orderCutoffTime)}` : 'Closed'}
+          </div>
+        </div>
+        
+        {/* Active Order Alert */}
+        {validActiveOrders.length > 0 && (
+          <Link to="/student/orders" className="mt-4 block p-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white flex items-center justify-between shadow-sm shadow-emerald-500/20 active:scale-[0.98] transition-transform">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                {allDelivered ? '🛵' : '👨‍🍳'}
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider">{allDelivered ? 'Order Delivered' : 'Order Preparing'}</p>
+                <p className="text-[10px] text-emerald-50 font-medium">{validActiveOrders.length} tiffin(s) • Tap to view</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-emerald-100" />
+          </Link>
+        )}
+      </div>
+
       {message && (
-        <div
-          className={`p-3 sm:p-4 rounded-2xl text-xs font-bold flex items-start justify-between gap-3 animate-fadeIn ${
-            message.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
-              : 'bg-red-50 text-red-900 border border-red-200'
-          }`}
-        >
-          <div className="flex items-start gap-2">
-            {message.type === 'success'
-              ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              : <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            }
+        <div className="mx-4 mt-4 p-3 rounded-xl bg-slate-800 text-white text-xs font-bold flex items-center justify-between shadow-lg animate-fadeIn">
+          <div className="flex items-center gap-2">
+            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-400" />}
             <span>{message.text}</span>
           </div>
-          <button onClick={() => setMessage(null)} className="shrink-0 text-slate-400 hover:text-slate-700">
-            <X className="w-4 h-4" />
+          <button onClick={() => setMessage(null)}><X className="w-4 h-4 text-slate-400" /></button>
+        </div>
+      )}
+
+      {(!dinnerMeal || dinnerMeal.status !== 'PUBLISHED') ? (
+        <div className="px-4 py-12 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <UtensilsCrossed className="w-8 h-8 text-slate-300" />
+          </div>
+          <h2 className="text-lg font-black text-slate-800">Menu not ready yet</h2>
+          <p className="text-sm text-slate-500 mt-1">The kitchen is still preparing today's menu.</p>
+        </div>
+      ) : (
+        <div className="px-4 mt-6 space-y-6">
+          
+          {/* Menu Showcase Horizontal Scroll */}
+          {dinnerMeal.menuItems && dinnerMeal.menuItems.length > 0 && (
+            <div>
+              <h2 className="text-sm font-black text-slate-900 mb-3 tracking-tight">What's Cooking?</h2>
+              <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 snap-x hide-scrollbar">
+                {dinnerMeal.menuItems.map(item => (
+                  <div key={item.id} className="snap-start shrink-0 w-28 p-3 rounded-2xl bg-white border border-slate-100 shadow-xs flex flex-col items-center text-center">
+                    <div className="text-2xl mb-1">{item.category === 'SABZI' ? '🥘' : item.category === 'DAL' ? '🍲' : item.category === 'RICE' ? '🍚' : '🫓'}</div>
+                    <span className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight">{item.name}</span>
+                    <span className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mt-1">{item.category}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tiffin Options List */}
+          <div>
+            <h2 className="text-sm font-black text-slate-900 mb-3 tracking-tight">Order Tiffin</h2>
+            <div className="space-y-4">
+              
+              {/* Full Tiffin */}
+              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs flex justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="w-3 h-3 rounded bg-orange-100 border border-orange-500 flex items-center justify-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    </span>
+                    <h3 className="text-base font-black text-slate-900">Full Tiffin</h3>
+                  </div>
+                  <p className="text-sm font-black text-slate-800">₹{fullPrice}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">Sabzi, 4 Roti, Dal, Steam Rice</p>
+                </div>
+                <div className="shrink-0 relative">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center text-4xl shadow-inner border border-orange-100">
+                    🍱
+                  </div>
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
+                    {getQuantityForType('FULL', 'SABZI_ROTI') === 0 ? (
+                      <button 
+                        onClick={() => addToCart('FULL')}
+                        disabled={isOrdersClosed}
+                        className="bg-white text-brand-600 font-black text-sm px-6 py-1.5 rounded-xl border border-brand-200 shadow-sm shadow-brand-100 uppercase tracking-wide hover:bg-brand-50 disabled:opacity-50"
+                      >
+                        ADD
+                      </button>
+                    ) : (
+                      <div className="bg-white flex items-center justify-between w-[90px] border border-brand-200 rounded-xl shadow-sm shadow-brand-100 text-brand-600 font-black">
+                        <button onClick={() => {
+                          const item = cart.find(c => c.orderType === 'FULL');
+                          if(item) removeCartItem(item.localId);
+                        }} className="px-2.5 py-1.5 hover:bg-brand-50 rounded-l-xl"><Minus className="w-3.5 h-3.5" /></button>
+                        <span className="text-sm">{getQuantityForType('FULL', 'SABZI_ROTI')}</span>
+                        <button onClick={() => addToCart('FULL')} className="px-2.5 py-1.5 hover:bg-brand-50 rounded-r-xl"><Plus className="w-3.5 h-3.5" /></button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Half Tiffin */}
+              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs flex justify-between gap-4 mt-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="w-3 h-3 rounded bg-amber-100 border border-amber-500 flex items-center justify-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    </span>
+                    <h3 className="text-base font-black text-slate-900">Half Tiffin</h3>
+                  </div>
+                  <p className="text-sm font-black text-slate-800">₹{halfPrice}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">Choose between Sabzi + 4 Roti OR Dal + Steam Rice.</p>
+                </div>
+                <div className="shrink-0 relative">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-50 to-yellow-50 flex items-center justify-center text-4xl shadow-inner border border-amber-100">
+                    🥘
+                  </div>
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
+                    {getQuantityForType('HALF', 'SABZI_ROTI') + getQuantityForType('HALF', 'DAL_RICE') === 0 ? (
+                      <button 
+                        onClick={() => addToCart('HALF')}
+                        disabled={isOrdersClosed}
+                        className="bg-white text-brand-600 font-black text-sm px-6 py-1.5 rounded-xl border border-brand-200 shadow-sm shadow-brand-100 uppercase tracking-wide hover:bg-brand-50 disabled:opacity-50"
+                      >
+                        ADD
+                      </button>
+                    ) : (
+                      <div className="bg-white flex items-center justify-between w-[90px] border border-brand-200 rounded-xl shadow-sm shadow-brand-100 text-brand-600 font-black">
+                        <button onClick={() => {
+                          const item = cart.find(c => c.orderType === 'HALF');
+                          if(item) removeCartItem(item.localId);
+                        }} className="px-2.5 py-1.5 hover:bg-brand-50 rounded-l-xl"><Minus className="w-3.5 h-3.5" /></button>
+                        <span className="text-sm">{getQuantityForType('HALF', 'SABZI_ROTI') + getQuantityForType('HALF', 'DAL_RICE')}</span>
+                        <button onClick={() => addToCart('HALF')} className="px-2.5 py-1.5 hover:bg-brand-50 rounded-r-xl"><Plus className="w-3.5 h-3.5" /></button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Bottom Cart Bar (Like Zomato) */}
+      {cart.length > 0 && !isCartSheetOpen && (
+        <div className="fixed bottom-[72px] md:bottom-6 left-0 right-0 px-4 z-40 animate-slideUp">
+          <button 
+            onClick={() => setIsCartSheetOpen(true)}
+            className="w-full bg-brand-600 text-white rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-brand-600/30 active:scale-[0.98] transition-transform"
+          >
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] font-bold text-brand-100 uppercase tracking-widest">{totalItems} Item{totalItems !== 1 ? 's' : ''} added</span>
+              <span className="text-base font-black flex items-center gap-1">₹{cartTotal} <span className="text-[10px] font-medium text-brand-200 mt-1">plus taxes</span></span>
+            </div>
+            <div className="flex items-center gap-2 font-black text-sm uppercase tracking-wide">
+              View Cart <ChevronRight className="w-4 h-4" />
+            </div>
           </button>
         </div>
       )}
 
-      {/* ── MAIN DINNER CARD ── */}
-      {loading ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-400 font-bold text-xs">
-          Loading tonight's dinner menu...
-        </div>
-      ) : !dinnerMeal ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center">
-          <UtensilsCrossed className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-lg font-black text-slate-800">No Dinner Menu Published Yet</h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Tonight's dinner menu has not been published by the kitchen yet. Check back shortly.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* ── DINNER HERO BANNER ── */}
-          <div className="rounded-2xl sm:rounded-3xl overflow-hidden shadow-md">
-            <div className="p-4 sm:p-6 bg-gradient-to-br from-brand-700 via-brand-600 to-amber-600 text-white">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-black uppercase tracking-wider">
-                      🌙 Tonight's Dinner
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached && !dinnerMeal.notOpenYet
-                        ? 'bg-emerald-400 text-slate-900'
-                        : dinnerMeal.notOpenYet
-                        ? 'bg-amber-300 text-slate-950 font-black'
-                        : 'bg-black/40 text-white'
-                    }`}>
-                      {dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached && !dinnerMeal.notOpenYet
-                        ? '🟢 ACCEPTING ORDERS'
-                        : dinnerMeal.notOpenYet
-                        ? `⏳ OPENS AT ${formatTime12Hour(dinnerMeal.orderOpenTime)}`
-                        : '⛔ ORDERS CLOSED'}
-                    </span>
-                    <span className="text-xs text-amber-100 font-bold">
-                      {formatDateDDMMYYYY(dinnerMeal.mealDate)}
-                    </span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-black mt-1.5">Fresh Homestyle Dinner Tiffin</h2>
-                  <p className="text-xs text-amber-100 mt-0.5">
-                    Delivered hot to <strong>{user?.hostelName || 'your hostel'}</strong>
-                  </p>
-                </div>
-                <div className="bg-black/20 backdrop-blur-sm px-4 py-2.5 rounded-2xl border border-white/20 self-start sm:self-auto shrink-0 text-left sm:text-right">
-                  <span className="text-[10px] uppercase font-bold text-amber-200 block">Daily Ordering Window</span>
-                  <span className="text-base sm:text-lg font-black text-white flex items-center sm:justify-end gap-1.5">
-                    <Clock className="w-4 h-4 text-amber-300" />
-                    <span>{formatTime12Hour(dinnerMeal.orderOpenTime)} – {formatTime12Hour(dinnerMeal.orderCutoffTime)}</span>
-                  </span>
-                </div>
+      {/* Cart Bottom Sheet Drawer */}
+      {isCartSheetOpen && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 animate-fadeIn" onClick={() => setIsCartSheetOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-50 rounded-t-[2rem] shadow-2xl z-50 flex flex-col max-h-[90vh] animate-slideUp">
+            
+            <div className="flex items-center justify-between p-5 pb-4 bg-white rounded-t-[2rem] shadow-sm relative z-10">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 leading-tight">Your Cart</h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{user?.hostelName || 'Delivery Location'}</p>
               </div>
-
-              {/* Tonight's Menu Items Preview */}
-              {dinnerMeal.menuItems && dinnerMeal.menuItems.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {dinnerMeal.menuItems.slice(0, 6).map((item) => (
-                    <span
-                      key={item.id}
-                      className="px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-white text-xs font-bold"
-                    >
-                      {item.category === 'SABZI' ? '🥘' : item.category === 'DAL' ? '🍲' : item.category === 'RICE' ? '🍚' : item.category === 'ROTI' ? '🫓' : '🍽️'} {item.name}
-                    </span>
-                  ))}
-                  {dinnerMeal.menuItems.length > 6 && (
-                    <span className="px-2.5 py-1 rounded-full bg-white/10 text-amber-200 text-xs font-bold">
-                      +{dinnerMeal.menuItems.length - 6} more
-                    </span>
-                  )}
-                </div>
-              )}
+              <button onClick={() => setIsCartSheetOpen(false)} className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Pricing Strip */}
-            <div className="bg-slate-900 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between sm:justify-start gap-3 sm:gap-6 border-t border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Full Tiffin</span>
-                <span className="text-base sm:text-lg font-black text-white">₹{fullPrice}</span>
+            <div className="p-4 overflow-y-auto pb-28 space-y-4 relative z-0">
+              {cart.map((item, idx) => (
+                <div key={item.localId} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs relative">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-start gap-2">
+                      <span className="w-3 h-3 mt-1 rounded bg-orange-100 border border-orange-500 flex items-center justify-center shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                      </span>
+                      <div>
+                        <span className="text-sm font-black text-slate-900 leading-tight block">
+                          {item.orderType === 'FULL' ? 'Full Tiffin' : item.halfTiffinChoice === 'DAL_RICE' ? 'Half Tiffin (Dal Rice)' : 'Half Tiffin (Sabzi Roti)'}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500">₹{item.orderType === 'FULL' ? fullPrice : halfPrice}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Item Quantity in Cart */}
+                    <div className="bg-white flex items-center justify-between w-20 border border-brand-200 rounded-lg shadow-xs text-brand-600 font-black">
+                      <button onClick={() => {
+                        if(item.quantity > 1) {
+                          updateCartItem(item.localId, {...item, quantity: item.quantity - 1});
+                        } else {
+                          removeCartItem(item.localId);
+                        }
+                      }} className="px-2 py-1"><Minus className="w-3 h-3" /></button>
+                      <span className="text-xs">{item.quantity}</span>
+                      <button onClick={() => updateCartItem(item.localId, {...item, quantity: item.quantity + 1})} className="px-2 py-1"><Plus className="w-3 h-3" /></button>
+                    </div>
+                  </div>
+
+                  {/* Half Tiffin Combo Switcher */}
+                  {item.orderType === 'HALF' && (
+                    <div className="flex gap-2 mb-4 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                      <button 
+                        onClick={() => updateCartItem(item.localId, {...item, halfTiffinChoice: 'SABZI_ROTI'})}
+                        className={`flex-1 py-1.5 text-[11px] font-black rounded-lg transition-colors ${item.halfTiffinChoice === 'SABZI_ROTI' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:bg-slate-200'}`}
+                      >
+                        Sabzi + Roti
+                      </button>
+                      <button 
+                        onClick={() => updateCartItem(item.localId, {...item, halfTiffinChoice: 'DAL_RICE', extraRotis: 0})}
+                        disabled={isDalRiceClosed}
+                        className={`flex-1 py-1.5 text-[11px] font-black rounded-lg transition-colors ${item.halfTiffinChoice === 'DAL_RICE' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : isDalRiceClosed ? 'opacity-40 text-red-600 line-through' : 'text-slate-500 hover:bg-slate-200'}`}
+                      >
+                        Dal + Rice
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Customizations */}
+                  <div className="space-y-3 mt-3 pt-3 border-t border-slate-50">
+                    {!(item.orderType === 'HALF' && item.halfTiffinChoice === 'DAL_RICE') && sabziOptions.length > 0 && (
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Sabzi Choice</span>
+                        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+                          {sabziOptions.map(s => (
+                            <button
+                              key={s.id}
+                              disabled={s.active === false}
+                              onClick={() => updateCartItem(item.localId, {...item, selectedSabzi: s.name})}
+                              className={`shrink-0 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-colors ${s.active === false ? 'opacity-40 border-slate-200 bg-slate-50 text-slate-500' : item.selectedSabzi === s.name ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm' : 'border-slate-200 bg-white text-slate-700'}`}
+                            >
+                              {s.name} {s.active === false && '(Sold Out)'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!(item.orderType === 'HALF' && item.halfTiffinChoice === 'DAL_RICE') && (
+                      <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div>
+                          <span className="text-[11px] font-black text-slate-700 block">Extra Roti</span>
+                          <span className="text-[9px] font-bold text-slate-400 block">₹6 per piece</span>
+                        </div>
+                        <div className="flex items-center gap-3 bg-white rounded-lg p-1 border border-slate-200 shadow-xs">
+                          <button onClick={() => updateCartItem(item.localId, {...item, extraRotis: Math.max(0, item.extraRotis - 1)})} className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded"><Minus className="w-3 h-3" /></button>
+                          <span className="text-xs font-black w-3 text-center">{item.extraRotis}</span>
+                          <button onClick={() => updateCartItem(item.localId, {...item, extraRotis: item.extraRotis + 1})} className="w-6 h-6 flex items-center justify-center text-brand-600 hover:bg-brand-50 rounded"><Plus className="w-3 h-3" /></button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="absolute top-4 right-4 text-sm font-black text-slate-900">
+                    ₹{calcCartItemPrice(item, halfPrice, fullPrice)}
+                  </div>
+                </div>
+              ))}
+
+              {/* Bill Details */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs">
+                <h3 className="text-sm font-black text-slate-900 mb-3 tracking-tight">Bill Details</h3>
+                <div className="space-y-2.5 text-xs font-bold text-slate-500">
+                  <div className="flex justify-between">
+                    <span>Item Total</span>
+                    <span className="text-slate-800">₹{cartTotal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery Fee</span>
+                    <span className="text-brand-600">FREE</span>
+                  </div>
+                  <div className="pt-3 mt-1 border-t border-slate-100 flex justify-between font-black text-slate-900 text-sm">
+                    <span>To Pay</span>
+                    <span>₹{cartTotal}</span>
+                  </div>
+                </div>
               </div>
-              <div className="hidden sm:block w-px h-5 bg-slate-700" />
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Half Tiffin</span>
-                <span className="text-base sm:text-lg font-black text-amber-400">₹{halfPrice}</span>
-              </div>
-              <div className="hidden sm:block w-px h-5 bg-slate-700" />
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Extra Roti</span>
-                <span className="text-xs sm:text-sm font-black text-slate-300">₹6/pc</span>
-              </div>
+            </div>
+
+            {/* Place Order CTA Bottom Fixed */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-white border-t border-slate-200 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] rounded-t-3xl z-20">
+              <button 
+                onClick={handlePlaceAllOrders}
+                disabled={orderActionLoading}
+                className="w-full py-4 rounded-2xl bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-black text-base transition-transform shadow-lg shadow-brand-600/30 flex items-center justify-between px-6"
+              >
+                <div className="flex flex-col items-start">
+                  <span className="text-[10px] font-bold text-brand-200 uppercase tracking-wider">{totalItems} Item{totalItems !== 1 ? 's' : ''}</span>
+                  <span className="text-lg">₹{cartTotal}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {orderActionLoading ? 'Processing...' : 'Place Order'} <ChevronRight className="w-5 h-5" />
+                </div>
+              </button>
             </div>
           </div>
-
-          {/* ── SLEEK ACTIVE ORDER NOTIFICATION (Dynamic: Open vs Closed/Locked vs Delivered) ── */}
-          {validActiveOrders.length > 0 && (
-            allDelivered ? (
-              /* State 1: All Orders Delivered */
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0 font-bold">
-                    🛵
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
-                        Tonight's Meal Delivered
-                      </span>
-                      <span className="text-xs font-semibold text-emerald-100">
-                        {validActiveOrders.length} {validActiveOrders.length > 1 ? 'orders' : 'order'} arrived
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
-                      Tonight's dinner has been delivered to <strong>{user?.hostelName || 'your hostel'}</strong>. Enjoy your meal!
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/student/orders"
-                  className="px-4 py-2 rounded-xl bg-white text-emerald-900 font-bold text-xs hover:bg-emerald-50 transition-colors shadow-xs shrink-0 text-center"
-                >
-                  View in My Orders →
-                </Link>
-              </div>
-            ) : isOrdersClosed ? (
-              /* State 2: Orders Are Closed / Cutoff Reached - Food in Prep (Locked) */
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-md border border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-lg shrink-0 font-bold text-amber-300">
-                    🔒
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <span>●</span>
-                        <span>Orders Closed • Meal In Prep</span>
-                      </span>
-                      <span className="text-xs font-semibold text-slate-300">
-                        {validActiveOrders.length} {validActiveOrders.length > 1 ? 'orders' : 'order'} locked
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm font-bold text-slate-200 mt-0.5">
-                      Orders for tonight are closed. Your meal is currently being prepared by the kitchen and can no longer be edited or cancelled.
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/student/orders"
-                  className="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition-colors shadow-xs shrink-0 text-center"
-                >
-                  Track in My Orders →
-                </Link>
-              </div>
-            ) : (
-              /* State 3: Orders Are Open - Can Edit or Cancel Until Cutoff */
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0 font-bold">
-                    ✓
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 px-2 py-0.5 rounded-full">
-                        Tonight's Order Placed
-                      </span>
-                      <span className="text-xs font-semibold text-emerald-100">
-                        {validActiveOrders.length} {validActiveOrders.length > 1 ? 'orders' : 'order'} confirmed
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
-                      Your meal is registered with the kitchen. You can edit or cancel your orders in My Orders until closing time ({formatTime12Hour(dinnerMeal?.orderCutoffTime)}).
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/student/orders"
-                  className="px-4 py-2 rounded-xl bg-white text-emerald-800 font-bold text-xs hover:bg-emerald-50 transition-colors shadow-xs shrink-0 text-center"
-                >
-                  View & Edit in My Orders →
-                </Link>
-              </div>
-            )
-          )}
-
-          {/* ── ORDERING & CART SECTION (ONLY IF MENU IS PUBLISHED & OPEN) ── */}
-          {dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached ? (
-            <div className="space-y-3">
-              {/* Section header */}
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                  <span>🍱</span>
-                  <span>{activeOrders.length > 0 ? 'Add Additional Tiffin' : 'Customize Tonight\'s Tiffin'}</span>
-                  {cart.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-[10px] font-black">
-                      {totalTiffinsInCart} tiffin{totalTiffinsInCart !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </h3>
-                {cart.length > 1 && (
-                  <button
-                    onClick={() => setCart([])}
-                    className="text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-1"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Reset
-                  </button>
-                )}
-              </div>
-
-              {/* If cart is empty, show instant add buttons */}
-              {cart.length === 0 && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs text-center space-y-4">
-                  <div>
-                    <h4 className="font-black text-slate-900 text-base">Ready for tonight's dinner?</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Select your portion below to begin ordering</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-                    <button
-                      type="button"
-                      onClick={() => addToCart('FULL')}
-                      className="p-4 rounded-2xl bg-brand-50 border-2 border-brand-500 hover:bg-brand-100 text-brand-950 font-black text-xs transition-all active:scale-95 shadow-sm"
-                    >
-                      <span className="text-xl block mb-1">🍱</span>
-                      <span className="block text-sm">Full Tiffin</span>
-                      <span className="text-brand-600 font-extrabold">₹{fullPrice}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => addToCart('HALF')}
-                      className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-500 hover:bg-amber-100 text-amber-950 font-black text-xs transition-all active:scale-95 shadow-sm"
-                    >
-                      <span className="text-xl block mb-1">🍲</span>
-                      <span className="block text-sm">Half Tiffin</span>
-                      <span className="text-amber-600 font-extrabold">₹{halfPrice}</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Cart Items */}
-              {cart.length > 0 && (
-                <div className="space-y-3">
-                  {cart.map((item, idx) => (
-                    <CartItemConfig
-                      key={item.localId}
-                      item={item}
-                      index={idx}
-                      sabziOptions={sabziOptions}
-                      halfPrice={halfPrice}
-                      fullPrice={fullPrice}
-                      isDalRiceClosed={isDalRiceClosed}
-                      onChange={(updated) => updateCartItem(item.localId, updated)}
-                      onRemove={() => removeCartItem(item.localId)}
-                      onSplit={() => splitCartItem(item.localId)}
-                      onAddAnother={() => addAnotherWithDifferentSabzi(item.orderType, item.selectedSabzi)}
-                    />
-                  ))}
-
-                  {/* Place Order Bar */}
-                  <div className="sticky bottom-16 sm:bottom-4 z-20 mt-3">
-                    <div className="bg-slate-900/95 backdrop-blur-md rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 shadow-2xl border border-slate-700">
-                      <div className="min-w-0">
-                        <span className="text-[10px] text-orange-400 font-black uppercase tracking-wider block">Order Summary</span>
-                        <span className="text-xs text-slate-200 font-bold truncate block">
-                          {totalTiffinsInCart} Tiffin{totalTiffinsInCart !== 1 ? 's' : ''} ({cart.length} item{cart.length !== 1 ? 's' : ''}) • {user?.hostelName || 'Your Hostel'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                          <span className="text-[10px] text-slate-400 font-bold block">TOTAL</span>
-                          <span className="text-xl font-black text-amber-400">₹{cartTotal}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handlePlaceAllOrders}
-                          disabled={orderActionLoading}
-                          className="px-5 sm:px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs sm:text-sm shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                        >
-                          {orderActionLoading ? (
-                            <span>Placing...</span>
-                          ) : (
-                            <>
-                              <Zap className="w-4 h-4 fill-white" />
-                              <span>Place Order</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Empty cart hint */}
-              {cart.length === 0 && (
-                <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
-                  <span className="text-2xl">🍱</span>
-                  <div>
-                    <span className="text-sm font-bold text-slate-700 block">
-                      {activeOrders.length > 0 ? 'Want to add more tiffins?' : 'Ready to order dinner?'}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      Tap the buttons above to add Full or Half Tiffins. You can mix and choose different sabzis!
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* ── CLOSED OR CUTOFF REACHED BANNER ── */
-            <div className="p-6 rounded-3xl bg-slate-100 border-2 border-slate-200 text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-slate-200 text-slate-600 flex items-center justify-center mx-auto text-2xl">
-                <Lock className="w-6 h-6 text-slate-500" />
-              </div>
-              <p className="font-black text-slate-900 text-base">
-                Dinner Orders Closed for Tonight
-              </p>
-              <p className="text-xs text-slate-600 max-w-md mx-auto">
-                {validActiveOrders.length > 0
-                  ? "Orders for tonight are closed. Your meal is registered and is being prepared in the kitchen."
-                  : "Ordering for today's dinner has closed. Fresh menus will reopen tomorrow evening!"}
-              </p>
-            </div>
-          )}
-        </div>
+        </>
       )}
     </div>
   );

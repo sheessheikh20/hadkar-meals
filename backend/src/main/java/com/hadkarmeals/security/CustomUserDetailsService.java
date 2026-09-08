@@ -26,9 +26,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with phone/email: " + identifier));
 
         java.util.List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
-        if (user.getRole() == com.hadkarmeals.entity.Role.ROLE_SUPER_ADMIN) {
-            authorities.add(new SimpleGrantedAuthority(com.hadkarmeals.entity.Role.ROLE_ADMIN.name()));
+        if (user.getRole() == com.hadkarmeals.entity.Role.ROLE_ADMIN) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        } else {
+            authorities.add(new SimpleGrantedAuthority("ROLE_STUDENT"));
         }
 
         return new org.springframework.security.core.userdetails.User(

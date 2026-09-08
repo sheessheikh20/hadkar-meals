@@ -71,7 +71,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/admin-cancel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin cancel order with reason and ledger reversal")
     public ResponseEntity<OrderResponse> adminCancelOrder(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -82,7 +82,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/deliver")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Mark single order as delivered and notify customer")
     public ResponseEntity<OrderResponse> deliverOrder(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -91,7 +91,7 @@ public class OrderController {
     }
 
     @PostMapping("/deliver-hostel/{hostelId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Mark all orders for a hostel location as delivered and notify all customers")
     public ResponseEntity<Map<String, Object>> deliverOrdersByHostel(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -114,14 +114,14 @@ public class OrderController {
     }
 
     @GetMapping("/student/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin get order history for a specific student/user")
     public ResponseEntity<List<OrderResponse>> getStudentOrdersAdmin(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.getStudentOrders(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin list orders with optional date and mealType filter")
     public ResponseEntity<List<OrderResponse>> getAllOrders(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,

@@ -36,7 +36,7 @@ public class BillingController {
     }
 
     @GetMapping("/sheet")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin spreadsheet-like monthly billing sheet with WhatsApp URLs and filters")
     public ResponseEntity<List<MonthlyBillResponse>> getBillingSheet(
             @RequestParam(required = false) String month,
@@ -47,7 +47,7 @@ public class BillingController {
     }
 
     @PostMapping("/generate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Generate/refresh all monthly bills for a given month")
     public ResponseEntity<List<MonthlyBillResponse>> generateAllBills(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -57,7 +57,7 @@ public class BillingController {
     }
 
     @PostMapping("/{id}/mark-paid")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "1-Click Mark a bill as paid (creates payment record & clears balance)")
     public ResponseEntity<MonthlyBillResponse> markBillAsPaid(
             @AuthenticationPrincipal UserDetails userDetails,

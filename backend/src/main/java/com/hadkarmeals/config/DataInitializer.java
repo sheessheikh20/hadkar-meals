@@ -116,18 +116,14 @@ public class DataInitializer implements CommandLineRunner {
         if (superAdmin != null) {
             superAdmin.setPhoneNumber("0987654321");
             superAdmin.setEmail("developer@hadkarmeals.com");
-            superAdmin.setPassword("SheesSheikh");
-            superAdmin.setRole(Role.ROLE_SUPER_ADMIN);
-            superAdmin.setActive(true);
+            superAdmin.setRole(Role.ROLE_ADMIN);
             userRepository.save(superAdmin);
             log.info("Synced Super Admin (Developer): phone=0987654321 email=developer@hadkarmeals.com password=SheesSheikh");
         } else {
             userRepository.save(User.builder()
                     .phoneNumber("0987654321")
                     .email("superadmin@hadkarmeals.com")
-                    .password("SheesSheikh")
-                    .role(Role.ROLE_SUPER_ADMIN)
-                    .active(true)
+                    .role(Role.ROLE_ADMIN)
                     .build());
             log.info("Created Super Admin: phone=0987654321 password=SheesSheikh");
         }

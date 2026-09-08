@@ -301,7 +301,7 @@ public class AuthService {
                 .or(() -> userRepository.findByPhoneNumber(altPhone))
                 .orElseThrow(() -> new BusinessException("Invalid admin credentials. Account not found."));
 
-        if (user.getRole() != Role.ROLE_ADMIN && user.getRole() != Role.ROLE_SUPER_ADMIN) {
+        if (user.getRole() != Role.ROLE_ADMIN) {
             throw new BusinessException("Access denied. You do not have administrator privileges.");
         }
 
@@ -327,7 +327,7 @@ public class AuthService {
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
                 .userId(user.getId())
-                .fullName(user.getRole() == Role.ROLE_SUPER_ADMIN ? "Super Admin (Developer)" : "Hadkar Meals Admin")
+                .fullName("Hadkar Meals Admin")
                 .active(true)
                 .profileComplete(true)
                 .build();

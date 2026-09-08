@@ -77,7 +77,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-client-password")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Super Admin reset client password")
     public ResponseEntity<java.util.Map<String, String>> resetClientPassword(@RequestBody java.util.Map<String, String> body) {
         String email = body.get("email");

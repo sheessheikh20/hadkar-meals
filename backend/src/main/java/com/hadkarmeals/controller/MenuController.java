@@ -50,14 +50,14 @@ public class MenuController {
     }
 
     @PostMapping("/items")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new menu item")
     public ResponseEntity<MenuItem> createMenuItem(@Valid @RequestBody CreateMenuItemRequest request) {
         return ResponseEntity.ok(menuService.createMenuItem(request));
     }
 
     @PutMapping("/items/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update an existing menu item")
     public ResponseEntity<MenuItem> updateMenuItem(
             @PathVariable Long id,
@@ -66,14 +66,14 @@ public class MenuController {
     }
 
     @PatchMapping("/items/{id}/toggle")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Toggle active status of menu item")
     public ResponseEntity<MenuItem> toggleMenuItem(@PathVariable Long id) {
         return ResponseEntity.ok(menuService.toggleMenuItem(id));
     }
 
     @DeleteMapping("/items/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a menu item")
     public ResponseEntity<Void> deleteMenuItem(@PathVariable Long id) {
         menuService.deleteMenuItem(id);
@@ -81,7 +81,7 @@ public class MenuController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create or update a daily meal menu (Dinner)")
     public ResponseEntity<Meal> createOrUpdateMeal(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -90,7 +90,7 @@ public class MenuController {
     }
 
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Publish meal menu to make it visible and open for ordering")
     public ResponseEntity<Meal> publishMeal(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -100,7 +100,7 @@ public class MenuController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete or reset a daily meal menu")
     public ResponseEntity<Void> deleteMeal(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -110,7 +110,7 @@ public class MenuController {
     }
 
     @PostMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Manually stop all orders for today's dinner")
     public ResponseEntity<Meal> closeMeal(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -120,7 +120,7 @@ public class MenuController {
     }
 
     @PostMapping("/{id}/reopen")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Re-open dinner orders")
     public ResponseEntity<Meal> reopenMeal(
             @AuthenticationPrincipal UserDetails userDetails,

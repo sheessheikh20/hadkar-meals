@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, isAdmin, isSuperAdmin, isStudent, logout } = useAuth();
+  const { user, isAdmin, isStudent, logout } = useAuth();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -36,58 +36,45 @@ export const Navbar: React.FC = () => {
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs select-none w-full">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-2">
-          {/* Brand Logo & Name */}
           <div className="flex items-center gap-2.5 shrink-0">
             <Link
-              to={isSuperAdmin ? '/super-admin' : isAdmin ? '/admin/dashboard' : '/student/dashboard'}
+              to={isAdmin ? '/admin/dashboard' : '/student/dashboard'}
               className="flex items-center gap-2 group"
             >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white shadow-sm shadow-brand-500/20 group-hover:scale-105 transition-transform shrink-0">
+              <div className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 items-center justify-center text-white shadow-sm shadow-brand-500/20 group-hover:scale-105 transition-transform shrink-0">
                 <span className="text-lg sm:text-xl">🍱</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-black text-base sm:text-lg tracking-tight text-slate-900 whitespace-nowrap">
-                  HADKAR <span className="text-brand-600">MEALS</span>
-                </span>
-                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded tracking-wider shrink-0 ${
-                  isSuperAdmin
-                    ? 'bg-indigo-100 text-indigo-800'
-                    : isAdmin
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-brand-100 text-brand-800'
-                }`}>
-                  {isSuperAdmin ? 'SUPER ADMIN' : isAdmin ? 'ADMIN' : 'STUDENT'}
-                </span>
-              </div>
+              
+              {isStudent && user ? (
+                <div className="flex flex-col justify-center">
+                  <div className="flex items-center gap-1 text-slate-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Delivery Location</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-900">
+                    <span className="text-sm font-black truncate max-w-[150px]">{user.hostelName || 'Hostel'}</span>
+                    <span className="text-[10px] bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded font-black">STUDENT</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-base sm:text-lg tracking-tight text-slate-900 whitespace-nowrap">
+                    HADKAR <span className="text-brand-600">MEALS</span>
+                  </span>
+                  <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded tracking-wider shrink-0 ${
+                    isAdmin
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-brand-100 text-brand-800'
+                  }`}>
+                    {isAdmin ? 'ADMIN' : 'STUDENT'}
+                  </span>
+                </div>
+              )}
             </Link>
           </div>
 
           {/* Desktop Navigation Links (Only on xl: 1280px+ to prevent side-by-side split screen collision) */}
           <div className="hidden xl:flex items-center gap-1 shrink-0">
-            {isSuperAdmin && (
-              <>
-                <Link
-                  to="/super-admin"
-                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                    isActive('/super-admin') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <UtensilsCrossed className="w-3.5 h-3.5 text-indigo-600" />
-                  Master Catalog & Dishes
-                </Link>
-                <Link
-                  to="/admin/dashboard"
-                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                    isActive('/admin/dashboard') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  Client Operations View
-                </Link>
-              </>
-            )}
-
-            {isAdmin && !isSuperAdmin && (
+            {isAdmin && (
               <>
                 <Link
                   to="/admin/dashboard"
@@ -133,6 +120,15 @@ export const Navbar: React.FC = () => {
                 >
                   <Users className="w-3.5 h-3.5" />
                   Students
+                </Link>
+                <Link
+                  to="/admin/system"
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                    isActive('/admin/system') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Database className="w-3.5 h-3.5 text-indigo-600" />
+                  System & Catalog
                 </Link>
               </>
             )}
@@ -193,8 +189,7 @@ export const Navbar: React.FC = () => {
                   <p className="font-bold text-xs text-slate-800 truncate">
                     {user.fullName ? user.fullName.split(' ')[0] : user.phoneNumber}
                   </p>
-                  <p className="text-[10px] font-medium text-slate-400 truncate">
-                    {user.hostelName || (isSuperAdmin ? 'Developer' : isAdmin ? 'Kitchen Staff' : 'Student')}
+                    {user.hostelName || (isAdmin ? 'Admin / Developer' : 'Student')}
                   </p>
                 </div>
                 <button
@@ -208,15 +203,17 @@ export const Navbar: React.FC = () => {
             )}
 
             {/* Mobile / Tablet Menu Trigger (Visible under xl: 1280px so side-by-side never breaks) */}
-            <div className="xl:hidden flex items-center ml-1">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                aria-label="Toggle navigation menu"
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
+            {!isStudent && (
+              <div className="xl:hidden flex items-center ml-1">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                  aria-label="Toggle navigation menu"
+                >
+                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -224,26 +221,7 @@ export const Navbar: React.FC = () => {
       {/* Mobile / Tablet Dropdown Menu */}
       {mobileMenuOpen && (
         <div className="xl:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-1.5 shadow-xl animate-fadeIn">
-          {isSuperAdmin ? (
-            <>
-              <Link
-                to="/super-admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-              >
-                <UtensilsCrossed className="w-4 h-4 text-indigo-600" />
-                <span>Master Dishes & Catalog</span>
-              </Link>
-              <Link
-                to="/admin/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Client Operations View</span>
-              </Link>
-            </>
-          ) : isAdmin ? (
+          {isAdmin ? (
             <>
               <Link
                 to="/admin/dashboard"
@@ -294,6 +272,16 @@ export const Navbar: React.FC = () => {
               >
                 <Users className="w-4 h-4 text-blue-600" />
                 <span>Students & Locations</span>
+              </Link>
+              <Link
+                to="/admin/system"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
+                  isActive('/admin/system') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Database className="w-4 h-4 text-indigo-600" />
+                <span>System & Catalog</span>
               </Link>
             </>
           ) : (

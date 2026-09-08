@@ -29,7 +29,7 @@ public class HostelController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new service location")
     public ResponseEntity<Hostel> createHostel(@RequestBody Map<String, String> body) {
         String name = body.get("name");
@@ -38,7 +38,7 @@ public class HostelController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a service location")
     public ResponseEntity<Hostel> updateHostel(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String name = body.get("name");
@@ -47,14 +47,14 @@ public class HostelController {
     }
 
     @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Toggle active status of service location")
     public ResponseEntity<Hostel> toggleHostel(@PathVariable Long id) {
         return ResponseEntity.ok(hostelService.toggleHostel(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a service location")
     public ResponseEntity<Void> deleteHostel(@PathVariable Long id) {
         hostelService.deleteHostel(id);
