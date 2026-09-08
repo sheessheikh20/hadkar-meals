@@ -95,6 +95,7 @@ public class AuthService {
                     .phoneNumber("G_" + java.util.UUID.randomUUID().toString().substring(0, 12))  // placeholder, replaced on profile completion
                     .email(email)
                     .googleId(googleUid)
+                    .googleName(name)
                     .password(null)
                     .role(Role.ROLE_STUDENT)
                     .active(true)
@@ -104,6 +105,7 @@ public class AuthService {
             // Link googleId if account existed but signed in with Google for the first time
             if (user.getGoogleId() == null) {
                 user.setGoogleId(googleUid);
+                user.setGoogleName(name);
                 userRepository.save(user);
             }
         }
@@ -149,6 +151,16 @@ public class AuthService {
         String phone = cleanPhoneNumber(request.getPhoneNumber());
         if (!isValidIndianMobileNumber(phone)) {
             throw new BusinessException("Invalid mobile number. Please enter a valid 10-digit Indian number.");
+        }
+
+        // Validate name against Google account name
+        if (user.getGoogleName() != null && request.getFullName() != null) {
+            String enteredName = request.getFullName().trim().toLowerCase();
+            String gName = user.getGoogleName().trim().toLowerCase();
+            // Basic matching: either exact match, or entered name is part of Google name, or vice versa
+            if (!enteredName.equals(gName) && !gName.contains(enteredName) && !enteredName.contains(gName)) {
+                throw new BusinessException("Name mismatch. Please use your real name as it appears on your Google Account: " + user.getGoogleName());
+            }
         }
 
         // Check if this phone is already taken by a different user
@@ -403,7 +415,41 @@ public class AuthService {
     public boolean isDisposableEmail(String email) {
         if (email == null || !email.contains("@")) return false;
         String domain = email.substring(email.lastIndexOf("@") + 1).toLowerCase();
-        return disposableDomains.contains(domain);
+        
+        if (disposableDomains.contains(domain)) {
+            return true;
+        }
+
+        // Live API Checks
+        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        
+        try {
+            // Kickbox API
+            String kickboxUrl = "https://open.kickbox.com/v1/disposable/" + email;
+            String kickboxResponse = restTemplate.getForObject(kickboxUrl, String.class);
+            if (kickboxResponse != null && kickboxResponse.contains("\"disposable\":true")) {
+                return true;
+            }
+        } catch (Exception e) {
+            System.err.println("Kickbox API failed: " + e.getMessage());
+        }
+
+        try {
+            // Debounce API
+            String debounceUrl = "https://disposable.debounce.io/?email=" + email;
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("User-Agent", "Mozilla/5.0");
+            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>("parameters", headers);
+            org.springframework.http.ResponseEntity<String> debounceResponse = restTemplate.exchange(
+                    debounceUrl, org.springframework.http.HttpMethod.GET, entity, String.class);
+            if (debounceResponse.getBody() != null && debounceResponse.getBody().contains("\"disposable\":\"true\"")) {
+                return true;
+            }
+        } catch (Exception e) {
+            System.err.println("Debounce API failed: " + e.getMessage());
+        }
+
+        return false;
     }
 
     public static boolean isValidIndianMobileNumber(String phone) {

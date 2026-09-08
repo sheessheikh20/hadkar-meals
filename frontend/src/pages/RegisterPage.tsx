@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword } from '../utils/firebase';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import disposableDomains from '../utils/disposable_domains.json';
 
 type AuthMethod = 'google' | 'email';
 
@@ -45,13 +44,31 @@ export const RegisterPage: React.FC = () => {
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
     
+    setLoading(true); setError(null);
+    
+    // 1. Check Static List
     const domain = email.trim().split('@')[1]?.toLowerCase();
     if (domain && (disposableDomains as string[]).includes(domain)) {
       setError('Temporary or disposable emails are not allowed.');
+      setLoading(false);
       return;
     }
 
-    setLoading(true); setError(null);
+    // 2. Check Live API (Kickbox)
+    try {
+      const kbRes = await fetch(`https://open.kickbox.com/v1/disposable/${email.trim()}`);
+      if (kbRes.ok) {
+        const kbData = await kbRes.json();
+        if (kbData.disposable) {
+          setError('Temporary or disposable emails are not allowed.');
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Live validation API failed, continuing with static check.");
+    }
+
     try {
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await handleFirebaseToken(result.user);
