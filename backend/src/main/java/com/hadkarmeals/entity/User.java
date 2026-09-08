@@ -26,6 +26,9 @@ public class User {
     @Column(length = 255)
     private String password;
 
+    @Column(unique = true, length = 128)
+    private String googleId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;

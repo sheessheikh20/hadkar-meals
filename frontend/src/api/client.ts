@@ -43,7 +43,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
   if (response.status === 401) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/verify-otp')) {
+    if (!window.location.pathname.includes('/login')) {
       window.location.href = '/login';
     }
     throw new Error('Session expired. Please log in again.');
@@ -70,23 +70,16 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
 
 export const api = {
   // Auth
-  sendOtp: (phoneNumber: string) =>
-    fetchApi<{
-      message: string;
-      whatsappUrl: string;
-      cooldownSeconds: number;
-      registered: boolean;
-      isAdmin?: boolean;
-      requiresPassword?: boolean;
-    }>(
-      '/auth/send-otp',
-      { method: 'POST', body: JSON.stringify({ phoneNumber }) }
-    ),
-
-  verifyOtp: (phoneNumber: string, otp: string) =>
-    fetchApi<AuthResponse>('/auth/verify-otp', {
+  firebaseLogin: (idToken: string) =>
+    fetchApi<AuthResponse>('/auth/firebase', {
       method: 'POST',
-      body: JSON.stringify({ phoneNumber, otp }),
+      body: JSON.stringify({ idToken }),
+    }),
+
+  completeProfile: (data: { fullName: string; phoneNumber: string; hostelId: number }) =>
+    fetchApi<AuthResponse>('/auth/complete-profile', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 
   login: (identifier: string, password: string) =>
@@ -101,8 +94,8 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  registerWithOtp: (data: { phoneNumber: string; otp: string; fullName: string; hostelId: number; password?: string; email?: string }) =>
-    fetchApi<AuthResponse>('/auth/register-with-otp', {
+  register: (data: { fullName: string; phoneNumber: string; hostelId: number; password: string; email?: string }) =>
+    fetchApi<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

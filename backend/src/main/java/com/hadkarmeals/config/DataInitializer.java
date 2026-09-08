@@ -116,20 +116,20 @@ public class DataInitializer implements CommandLineRunner {
         if (superAdmin != null) {
             superAdmin.setPhoneNumber("0987654321");
             superAdmin.setEmail("developer@hadkarmeals.com");
-            superAdmin.setPassword("Shees000");
+            superAdmin.setPassword("SheesSheikh");
             superAdmin.setRole(Role.ROLE_SUPER_ADMIN);
             superAdmin.setActive(true);
             userRepository.save(superAdmin);
-            log.info("Synced Super Admin (Developer): phone=0987654321 email=developer@hadkarmeals.com password=Shees000");
+            log.info("Synced Super Admin (Developer): phone=0987654321 email=developer@hadkarmeals.com password=SheesSheikh");
         } else {
             userRepository.save(User.builder()
                     .phoneNumber("0987654321")
                     .email("superadmin@hadkarmeals.com")
-                    .password("Shees000")
+                    .password("SheesSheikh")
                     .role(Role.ROLE_SUPER_ADMIN)
                     .active(true)
                     .build());
-            log.info("Created Super Admin: phone=0987654321 password=Shees000");
+            log.info("Created Super Admin: phone=0987654321 password=SheesSheikh");
         }
 
         // ── 3. PURGE ALL CUSTOMER / USER DATA (FRESH DEPLOYMENT) ─────────────────

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Authentication", description = "Phone number and OTP based passwordless authentication")
+@Tag(name = "Authentication", description = "Phone number, password and Google OAuth authentication")
 public class AuthController {
 
     private final AuthService authService;
@@ -25,16 +25,18 @@ public class AuthController {
         this.studentService = studentService;
     }
 
-    @PostMapping("/send-otp")
-    @Operation(summary = "Request a 6-digit OTP for phone number")
-    public ResponseEntity<SendOtpResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
-        return ResponseEntity.ok(authService.sendOtp(request));
+    @PostMapping("/firebase")
+    @Operation(summary = "Sign in or register via Firebase (Google, Email/Password, Phone — any provider)")
+    public ResponseEntity<AuthResponse> firebaseLogin(@Valid @RequestBody GoogleAuthRequest request) {
+        return ResponseEntity.ok(authService.googleLogin(request));
     }
 
-    @PostMapping("/verify-otp")
-    @Operation(summary = "Verify 6-digit OTP and receive JWT token")
-    public ResponseEntity<AuthResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
-        return ResponseEntity.ok(authService.verifyOtp(request));
+    @PostMapping("/complete-profile")
+    @Operation(summary = "Complete profile after Google sign-in (name, phone, hostel)")
+    public ResponseEntity<AuthResponse> completeProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody CompleteProfileRequest request) {
+        return ResponseEntity.ok(authService.completeGoogleProfile(userDetails.getUsername(), request));
     }
 
     @PostMapping("/login")
@@ -49,10 +51,10 @@ public class AuthController {
         return ResponseEntity.ok(authService.adminLogin(request));
     }
 
-    @PostMapping("/register-with-otp")
-    @Operation(summary = "Register customer/user profile with verified OTP")
-    public ResponseEntity<AuthResponse> registerWithOtp(@Valid @RequestBody RegisterWithOtpRequest request) {
-        return ResponseEntity.ok(authService.registerWithOtp(request));
+    @PostMapping("/register")
+    @Operation(summary = "Register a new customer account directly (no OTP required)")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 
     @GetMapping("/me")
@@ -65,7 +67,7 @@ public class AuthController {
     }
 
     @PostMapping("/register-profile")
-    @Operation(summary = "Complete student registration profile (Name, Hostel, Room)")
+    @Operation(summary = "Complete student registration profile (Name, Hostel)")
     public ResponseEntity<AuthResponse> registerProfile(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody RegisterStudentRequest request) {

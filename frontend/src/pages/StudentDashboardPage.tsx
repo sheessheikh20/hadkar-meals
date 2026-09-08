@@ -115,54 +115,51 @@ const CartItemConfig: React.FC<CartItemConfigProps> = ({
         <div className="p-4 space-y-4">
           {/* Portion Type */}
           <div>
-            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">Portion</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">Select Portion</span>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Full Tiffin */}
               <button
                 type="button"
                 onClick={() => onChange({ ...item, orderType: 'FULL', halfTiffinChoice: 'SABZI_ROTI' })}
-                className={`p-3.5 rounded-2xl border-2 text-left transition-all relative ${
+                className={`relative rounded-2xl border-2 p-3 text-left transition-all focus:outline-none ${
                   item.orderType === 'FULL'
-                    ? 'border-orange-500 bg-orange-50/70 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-amber-50 shadow-md shadow-orange-100'
+                    : 'border-slate-200 bg-white hover:border-orange-300 hover:bg-orange-50/40'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      item.orderType === 'FULL' ? 'border-orange-600 bg-orange-600' : 'border-slate-300'
-                    }`}>
-                      {item.orderType === 'FULL' && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
-                    </span>
-                    <div>
-                      <span className="text-sm font-black text-slate-900 block">Full Tiffin</span>
-                      <span className="text-[11px] text-slate-500 font-medium">Sabzi + 4 Roti + Dal + Rice</span>
-                    </div>
-                  </div>
-                  <span className="text-base font-black text-orange-600">₹{fullPrice}</span>
+                {item.orderType === 'FULL' && (
+                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </span>
+                )}
+                <div className="text-xl mb-1">🍱</div>
+                <div className="text-sm font-black text-slate-900 leading-tight">Full Tiffin</div>
+                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Sabzi · Roti · Dal · Rice</div>
+                <div className={`mt-2 text-base font-black ${item.orderType === 'FULL' ? 'text-orange-600' : 'text-slate-600'}`}>
+                  ₹{fullPrice}
                 </div>
               </button>
+
+              {/* Half Tiffin */}
               <button
                 type="button"
                 onClick={() => onChange({ ...item, orderType: 'HALF' })}
-                className={`p-3.5 rounded-2xl border-2 text-left transition-all relative ${
+                className={`relative rounded-2xl border-2 p-3 text-left transition-all focus:outline-none ${
                   item.orderType === 'HALF'
-                    ? 'border-amber-500 bg-amber-50/70 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-amber-500 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-md shadow-amber-100'
+                    : 'border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/40'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      item.orderType === 'HALF' ? 'border-amber-600 bg-amber-600' : 'border-slate-300'
-                    }`}>
-                      {item.orderType === 'HALF' && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
-                    </span>
-                    <div>
-                      <span className="text-sm font-black text-slate-900 block">Half Tiffin</span>
-                      <span className="text-[11px] text-slate-500 font-medium">Sabzi+Roti OR Dal+Rice</span>
-                    </div>
-                  </div>
-                  <span className="text-base font-black text-amber-700">₹{halfPrice}</span>
+                {item.orderType === 'HALF' && (
+                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </span>
+                )}
+                <div className="text-xl mb-1">🥘</div>
+                <div className="text-sm font-black text-slate-900 leading-tight">Half Tiffin</div>
+                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Sabzi+Roti or Dal+Rice</div>
+                <div className={`mt-2 text-base font-black ${item.orderType === 'HALF' ? 'text-amber-600' : 'text-slate-600'}`}>
+                  ₹{halfPrice}
                 </div>
               </button>
             </div>

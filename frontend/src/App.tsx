@@ -8,7 +8,7 @@ import { NotificationPromptModal } from './components/NotificationPromptModal';
 // Pages
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { VerifyOtpPage } from './pages/VerifyOtpPage';
+import { CompleteProfilePage } from './pages/CompleteProfilePage';
 import { RegisterProfilePage } from './pages/RegisterProfilePage';
 import { StudentDashboardPage } from './pages/StudentDashboardPage';
 import { StudentOrdersPage } from './pages/StudentOrdersPage';
@@ -88,7 +88,7 @@ export const App: React.FC = () => {
             {/* Auth */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/verify-otp" element={<VerifyOtpPage />} />
+            <Route path="/complete-profile" element={<CompleteProfilePage />} />
             <Route path="/register-profile" element={<RegisterProfilePage />} />
 
             {/* Super Admin Console */}

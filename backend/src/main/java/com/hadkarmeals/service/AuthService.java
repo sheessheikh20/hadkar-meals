@@ -1,5 +1,7 @@
 package com.hadkarmeals.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 import com.hadkarmeals.dto.*;
 import com.hadkarmeals.entity.Hostel;
 import com.hadkarmeals.entity.Role;
@@ -21,113 +23,189 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
-    private final OtpService otpService;
     private final JwtTokenProvider tokenProvider;
     private final StudentService studentService;
     private final AuditLogService auditLogService;
-
     private final HostelRepository hostelRepository;
 
     public AuthService(
             UserRepository userRepository,
             StudentRepository studentRepository,
             HostelRepository hostelRepository,
-            OtpService otpService,
             JwtTokenProvider tokenProvider,
             StudentService studentService,
             AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.hostelRepository = hostelRepository;
-        this.otpService = otpService;
         this.tokenProvider = tokenProvider;
         this.studentService = studentService;
         this.auditLogService = auditLogService;
     }
 
-    public SendOtpResponse sendOtp(SendOtpRequest request) {
-        String phone = cleanPhoneNumber(request.getPhoneNumber());
-        Optional<User> userOpt = userRepository.findByPhoneNumber(phone);
-        if (userOpt.isEmpty()) {
-            String altPhone = phone.startsWith("0") ? phone.substring(1) : "0" + phone;
-            userOpt = userRepository.findByPhoneNumber(altPhone);
-        }
-        boolean isRegistered = userOpt.isPresent();
-
-        boolean isAdmin = userOpt.isPresent() &&
-                (userOpt.get().getRole() == Role.ROLE_ADMIN || userOpt.get().getRole() == Role.ROLE_SUPER_ADMIN);
-
-        // Reject fake/invalid mobile numbers for non-admin accounts
-        if (!isAdmin && !isValidIndianMobileNumber(phone)) {
-            throw new BusinessException("Invalid mobile number. Please enter an authentic 10-digit Indian mobile number starting with 6, 7, 8, or 9.");
+    // ── Google Sign-In ────────────────────────────────────────────────────────
+    @Transactional
+    public AuthResponse googleLogin(GoogleAuthRequest request) {
+        FirebaseToken decoded;
+        try {
+            decoded = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+        } catch (Exception e) {
+            throw new BusinessException("Invalid Google token. Please try signing in again.");
         }
 
-        // If admin/staff, they authenticate using their secure password rather than OTP
-        if (isAdmin) {
-            return SendOtpResponse.builder()
-                    .message("Admin account detected. Please enter your password.")
-                    .whatsappUrl(null)
-                    .cooldownSeconds(0)
-                    .isRegistered(true)
-                    .isAdmin(true)
-                    .requiresPassword(true)
+        String googleUid = decoded.getUid();
+        String email = decoded.getEmail() != null ? decoded.getEmail().toLowerCase().trim() : null;
+        String name = decoded.getName();
+
+        // 1. Try find existing user by googleId first, then by email
+        User user = userRepository.findByGoogleId(googleUid)
+                .orElseGet(() -> email != null ? userRepository.findByEmail(email).orElse(null) : null);
+
+        boolean isNewUser = (user == null);
+
+        if (isNewUser) {
+            // Create a new stub user — no phone, no password yet (profile completion required)
+            user = User.builder()
+                    .phoneNumber("G_" + googleUid)  // placeholder, replaced on profile completion
+                    .email(email)
+                    .googleId(googleUid)
+                    .password(null)
+                    .role(Role.ROLE_STUDENT)
+                    .active(true)
                     .build();
+            user = userRepository.save(user);
+        } else {
+            // Link googleId if account existed but signed in with Google for the first time
+            if (user.getGoogleId() == null) {
+                user.setGoogleId(googleUid);
+                userRepository.save(user);
+            }
         }
 
-        // Generate and store OTP server-side. The raw code is ONLY used to build the
-        // WhatsApp URL here — it is never sent back in the API response body.
-        String otpCode = otpService.generateAndStoreOtp(phone);
+        Optional<Student> studentOpt = studentRepository.findByUserId(user.getId());
+        Long studentId = studentOpt.map(Student::getId).orElse(null);
+        String fullName = studentOpt.map(Student::getFullName).orElse(name);
+        String hostelName = studentOpt.map(s -> s.getHostel() != null ? s.getHostel().getName() : null).orElse(null);
+        boolean profileComplete = studentOpt.isPresent() && studentOpt.get().getHostel() != null
+                && studentOpt.get().getPhoneNumber() != null
+                && !studentOpt.get().getPhoneNumber().startsWith("G_");
 
-        // Build a wa.me deep link that pre-fills the message to the user's OWN number.
-        // The +91 prefix is added for Indian numbers. The user must manually press "Send" inside WhatsApp.
-        String cleanForWa = phone.startsWith("91") ? phone : "91" + phone;
-        String waMessage = "HadkarMeals OTP: " + otpCode;
-        String whatsappUrl = "https://wa.me/" + cleanForWa + "?text=" + java.net.URLEncoder.encode(waMessage, java.nio.charset.StandardCharsets.UTF_8);
+        String token = tokenProvider.generateToken(user.getPhoneNumber(), user.getRole(), user.getId(), studentId);
 
-        return SendOtpResponse.builder()
-                .message("Please send the pre-filled message via WhatsApp to verify your number.")
-                .whatsappUrl(whatsappUrl)
-                .cooldownSeconds(5)
-                .isRegistered(isRegistered)
-                .isAdmin(false)
-                .requiresPassword(false)
+        auditLogService.log(
+                isNewUser ? "GOOGLE_REGISTER" : "GOOGLE_LOGIN",
+                user.getPhoneNumber(),
+                "User",
+                String.valueOf(user.getId()),
+                (isNewUser ? "New user via Google: " : "Existing user via Google: ") + email
+        );
+
+        return AuthResponse.builder()
+                .token(token)
+                .role(user.getRole())
+                .phoneNumber(user.getPhoneNumber().startsWith("G_") ? null : user.getPhoneNumber())
+                .email(user.getEmail())
+                .userId(user.getId())
+                .studentId(studentId)
+                .fullName(fullName)
+                .hostelName(hostelName)
+                .active(user.getActive())
+                .profileComplete(profileComplete)
                 .build();
     }
 
-
+    // ── Complete Profile (after Google Sign-In for new users) ─────────────────
     @Transactional
-    public AuthResponse registerWithOtp(RegisterWithOtpRequest request) {
+    public AuthResponse completeGoogleProfile(String userPhone, CompleteProfileRequest request) {
+        User user = userRepository.findByPhoneNumber(userPhone)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         String phone = cleanPhoneNumber(request.getPhoneNumber());
+        if (!isValidIndianMobileNumber(phone)) {
+            throw new BusinessException("Invalid mobile number. Please enter a valid 10-digit Indian number.");
+        }
+
+        // Check if this phone is already taken by a different user
+        userRepository.findByPhoneNumber(phone).ifPresent(existing -> {
+            if (!existing.getId().equals(user.getId())) {
+                throw new BusinessException("This mobile number is already registered with another account.");
+            }
+        });
+
+        // Update user phone (replace the G_ placeholder)
+        user.setPhoneNumber(phone);
+        userRepository.save(user);
+
+        // Find/create hostel
+        Hostel hostel = hostelRepository.findById(request.getHostelId())
+                .orElseThrow(() -> new ResourceNotFoundException("Selected delivery location not found"));
+
+        // Create or update Student profile
+        Student student = studentRepository.findByUserId(user.getId()).orElse(
+                Student.builder().user(user).active(true).build()
+        );
+        student.setFullName(request.getFullName().trim());
+        student.setPhoneNumber(phone);
+        student.setEmail(user.getEmail());
+        student.setHostel(hostel);
+        student = studentRepository.save(student);
+
+        String token = tokenProvider.generateToken(user.getPhoneNumber(), user.getRole(), user.getId(), student.getId());
+
+        auditLogService.log(
+                "PROFILE_COMPLETED",
+                phone,
+                "Student",
+                String.valueOf(student.getId()),
+                "Profile completed for: " + student.getFullName() + " at " + hostel.getName()
+        );
+
+        return AuthResponse.builder()
+                .token(token)
+                .role(user.getRole())
+                .phoneNumber(phone)
+                .email(user.getEmail())
+                .userId(user.getId())
+                .studentId(student.getId())
+                .fullName(student.getFullName())
+                .hostelName(hostel.getName())
+                .active(true)
+                .profileComplete(true)
+                .build();
+    }
+
+    // ── Direct Registration (no OTP) ─────────────────────────────────────────
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        String phone = cleanPhoneNumber(request.getPhoneNumber());
+
         if (!isValidIndianMobileNumber(phone)) {
             throw new BusinessException("Invalid mobile number. Please enter an authentic 10-digit Indian mobile number starting with 6, 7, 8, or 9.");
         }
 
-        // 1. Check if already registered - Strict prevention of duplicate accounts
         if (userRepository.existsByPhoneNumber(phone)) {
             throw new BusinessException("This mobile number is already registered. Please go to Login.");
         }
 
-        // 2. Verify OTP first! (Unverified numbers are never registered)
-        boolean verified = otpService.verifyOtp(phone, request.getOtp());
-        if (!verified) {
-            throw new BusinessException("Invalid or expired OTP. Please enter the correct OTP.");
+        if (request.getPassword() == null || request.getPassword().trim().length() < 6) {
+            throw new BusinessException("Password must be at least 6 characters.");
         }
 
-        // 3. Find Delivery Location
+        // Find Delivery Location
         Hostel hostel = hostelRepository.findById(request.getHostelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Selected delivery location not found"));
 
-        // 4. Create User
+        // Create User
         User user = User.builder()
                 .phoneNumber(phone)
-                .email(request.getEmail() != null && !request.getEmail().trim().isEmpty() ? request.getEmail().trim() : null)
-                .password(request.getPassword() != null && !request.getPassword().trim().isEmpty() ? request.getPassword().trim() : null)
+                .email(request.getEmail() != null && !request.getEmail().trim().isEmpty() ? request.getEmail().trim().toLowerCase() : null)
+                .password(request.getPassword().trim())
                 .role(Role.ROLE_STUDENT)
                 .active(true)
                 .build();
         user = userRepository.save(user);
 
-        // 5. Create Student / Customer Profile
+        // Create Student / Customer Profile
         Student student = Student.builder()
                 .user(user)
                 .fullName(request.getFullName().trim())
@@ -162,6 +240,7 @@ public class AuthService {
                 .build();
     }
 
+    // ── Password Login (universal: Student, Admin, Super Admin) ──────────────
     public AuthResponse loginWithPassword(LoginRequest request) {
         String identifier = request.getIdentifier().trim();
         String cleaned = cleanPhoneNumber(identifier);
@@ -211,6 +290,7 @@ public class AuthService {
                 .build();
     }
 
+    // ── Admin Login ───────────────────────────────────────────────────────────
     public AuthResponse adminLogin(AdminLoginRequest request) {
         String identifier = request.getEmail().trim().toLowerCase();
         String cleaned = cleanPhoneNumber(identifier);
@@ -225,7 +305,6 @@ public class AuthService {
             throw new BusinessException("Access denied. You do not have administrator privileges.");
         }
 
-        // Verify password — only accept the exact stored password, no backdoors
         if (user.getPassword() == null || !user.getPassword().equals(request.getPassword())) {
             auditLogService.log("ADMIN_LOGIN_FAILED", user.getPhoneNumber(), "User",
                     String.valueOf(user.getId()), "Failed admin login attempt");
@@ -254,50 +333,7 @@ public class AuthService {
                 .build();
     }
 
-    @Transactional
-    public AuthResponse verifyOtp(VerifyOtpRequest request) {
-        String phone = cleanPhoneNumber(request.getPhoneNumber());
-        boolean verified = otpService.verifyOtp(phone, request.getOtp());
-
-        if (!verified) {
-            throw new BusinessException("Failed to verify OTP. Incorrect or expired code.");
-        }
-
-        // For login, user must exist in database
-        User user = userRepository.findByPhoneNumber(phone)
-                .orElseThrow(() -> new BusinessException("Account not found for " + phone + ". Please sign up first!"));
-
-        Optional<Student> studentOpt = studentRepository.findByUserId(user.getId());
-
-        Long studentId = studentOpt.map(Student::getId).orElse(null);
-        String fullName = studentOpt.map(Student::getFullName).orElse(null);
-        String hostelName = studentOpt.map(s -> s.getHostel() != null ? s.getHostel().getName() : null).orElse(null);
-        boolean profileComplete = studentOpt.isPresent() && studentOpt.get().getHostel() != null;
-
-        String token = tokenProvider.generateToken(user.getPhoneNumber(), user.getRole(), user.getId(), studentId);
-
-        auditLogService.log(
-                "USER_LOGIN",
-                phone,
-                "User",
-                String.valueOf(user.getId()),
-                "Logged in with role: " + user.getRole()
-        );
-
-        return AuthResponse.builder()
-                .token(token)
-                .role(user.getRole())
-                .phoneNumber(user.getPhoneNumber())
-                .email(user.getEmail())
-                .userId(user.getId())
-                .studentId(studentId)
-                .fullName(fullName)
-                .hostelName(hostelName)
-                .active(user.getActive())
-                .profileComplete(profileComplete)
-                .build();
-    }
-
+    // ── Current User Info ─────────────────────────────────────────────────────
     public AuthResponse getCurrentUserInfo(String phoneNumber) {
         User user = userRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with phone: " + phoneNumber));
@@ -321,6 +357,7 @@ public class AuthService {
                 .build();
     }
 
+    // ── Reset Client Password (Super Admin) ───────────────────────────────────
     @Transactional
     public void resetClientPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email.trim().toLowerCase())
@@ -329,6 +366,7 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     public static boolean isValidIndianMobileNumber(String phone) {
         if (phone == null) return false;
         String digits = phone.replaceAll("[^0-9]", "");
@@ -338,39 +376,22 @@ public class AuthService {
             digits = digits.substring(1);
         }
         if (digits.length() != 10) return false;
-
-        // Valid Indian mobile numbers start with 6, 7, 8, or 9
-        if (!digits.matches("^[6-9]\\d{9}$")) {
-            return false;
-        }
-
-        // Reject repeated digits (e.g. 9999999999, 8888888888, 7777777777, 6666666666)
+        if (!digits.matches("^[6-9]\\d{9}$")) return false;
         char first = digits.charAt(0);
         boolean allSame = true;
         for (int i = 1; i < 10; i++) {
-            if (digits.charAt(i) != first) {
-                allSame = false;
-                break;
-            }
+            if (digits.charAt(i) != first) { allSame = false; break; }
         }
         if (allSame) return false;
-
-        // Reject obvious fake test patterns
-        if (digits.equals("9876543210") || digits.equals("9876543211") || digits.equals("9123456789") || digits.equals("9000000000")) {
-            return false;
-        }
-
+        if (digits.equals("9876543210") || digits.equals("9876543211") || digits.equals("9123456789") || digits.equals("9000000000")) return false;
         return true;
     }
 
     private String cleanPhoneNumber(String phone) {
         if (phone == null) return "";
         String digits = phone.replaceAll("[^0-9]", "");
-        if (digits.startsWith("91") && digits.length() == 12) {
-            digits = digits.substring(2);
-        } else if (digits.startsWith("0") && digits.length() == 11) {
-            digits = digits.substring(1);
-        }
+        if (digits.startsWith("91") && digits.length() == 12) digits = digits.substring(2);
+        else if (digits.startsWith("0") && digits.length() == 11) digits = digits.substring(1);
         return digits;
     }
 }
