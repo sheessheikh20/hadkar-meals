@@ -50,24 +50,24 @@ public class SecurityConfig {
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menus/today", "/api/service-status/current", "/api/hostels", "/api/hostels/**", "/api/billing/pdf/**").permitAll()
 
-                        // H2 console & API Docs restricted to Admin/SuperAdmin
-                        .requestMatchers("/h2-console/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        // H2 console & API Docs restricted to Admin
+                        .requestMatchers("/h2-console/**").hasRole("ADMIN")
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")
 
-                        // Admin & Super Admin strictly secured endpoints
-                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/menus/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/menus/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/hostels/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/hostels/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/hostels/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/billing/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/payments/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/charges/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/kitchen/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/reports/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/holidays/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        // Admin strictly secured endpoints
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/menus/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/menus/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/hostels/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/hostels/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/hostels/**").hasRole("ADMIN")
+                        .requestMatchers("/api/billing/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/payments/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/charges/**").hasRole("ADMIN")
+                        .requestMatchers("/api/kitchen/**").hasRole("ADMIN")
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
+                        .requestMatchers("/api/holidays/**").hasRole("ADMIN")
 
                         // Student and authenticated endpoints
                         .anyRequest().authenticated()

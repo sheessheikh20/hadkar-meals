@@ -314,8 +314,7 @@ public class AuthService {
         Optional<Student> studentOpt = studentRepository.findByUserId(user.getId());
         Long studentId = studentOpt.map(Student::getId).orElse(null);
         String fullName = studentOpt.map(Student::getFullName).orElse(
-                user.getRole() == Role.ROLE_SUPER_ADMIN ? "Super Admin (Developer)" :
-                user.getRole() == Role.ROLE_ADMIN ? "Hadkar Meals Admin" : "Customer"
+                user.getRole() == Role.ROLE_ADMIN ? "Hadkar Meals Admin" : "User"
         );
         String hostelName = studentOpt.map(s -> s.getHostel() != null ? s.getHostel().getName() : null).orElse(null);
         boolean profileComplete = studentOpt.isPresent() && studentOpt.get().getHostel() != null;
@@ -404,14 +403,14 @@ public class AuthService {
                 .email(user.getEmail())
                 .userId(user.getId())
                 .studentId(studentId)
-                .fullName(fullName != null ? fullName : (user.getRole() == Role.ROLE_SUPER_ADMIN ? "Super Admin (Developer)" : (user.getRole() == Role.ROLE_ADMIN ? "Hadkar Meals Admin" : "User")))
+                .fullName(fullName != null ? fullName : (user.getRole() == Role.ROLE_ADMIN ? "Hadkar Meals Admin" : "User"))
                 .hostelName(hostelName)
                 .active(user.getActive())
-                .profileComplete(user.getRole() == Role.ROLE_SUPER_ADMIN || user.getRole() == Role.ROLE_ADMIN || profileComplete)
+                .profileComplete(user.getRole() == Role.ROLE_ADMIN || profileComplete)
                 .build();
     }
 
-    // ── Reset Client Password (Super Admin) ───────────────────────────────────
+    // ── Reset Client Password ─────────────────────────────────────────────────
     @Transactional
     public void resetClientPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email.trim().toLowerCase())
