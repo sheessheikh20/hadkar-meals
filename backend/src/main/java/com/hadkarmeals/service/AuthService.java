@@ -13,10 +13,18 @@ import com.hadkarmeals.repository.HostelRepository;
 import com.hadkarmeals.repository.StudentRepository;
 import com.hadkarmeals.repository.UserRepository;
 import com.hadkarmeals.security.JwtTokenProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class AuthService {
@@ -27,6 +35,8 @@ public class AuthService {
     private final StudentService studentService;
     private final AuditLogService auditLogService;
     private final HostelRepository hostelRepository;
+    
+    private Set<String> disposableDomains = new HashSet<>();
 
     public AuthService(
             UserRepository userRepository,
@@ -41,6 +51,18 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
         this.studentService = studentService;
         this.auditLogService = auditLogService;
+    }
+
+    @PostConstruct
+    public void init() {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            InputStream is = new ClassPathResource("disposable_domains.json").getInputStream();
+            List<String> domains = mapper.readValue(is, new TypeReference<List<String>>() {});
+            disposableDomains.addAll(domains);
+        } catch (Exception e) {
+            System.err.println("Failed to load disposable domains list. Proceeding with empty list.");
+        }
     }
 
     // ── Google Sign-In ────────────────────────────────────────────────────────
@@ -185,6 +207,13 @@ public class AuthService {
 
         if (userRepository.existsByPhoneNumber(phone)) {
             throw new BusinessException("This mobile number is already registered. Please go to Login.");
+        }
+
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String emailStr = request.getEmail().trim().toLowerCase();
+            if (isDisposableEmail(emailStr)) {
+                throw new BusinessException("Temporary or disposable emails are not allowed.");
+            }
         }
 
         if (request.getPassword() == null || request.getPassword().trim().length() < 6) {
@@ -367,6 +396,12 @@ public class AuthService {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+    public boolean isDisposableEmail(String email) {
+        if (email == null || !email.contains("@")) return false;
+        String domain = email.substring(email.lastIndexOf("@") + 1).toLowerCase();
+        return disposableDomains.contains(domain);
+    }
+
     public static boolean isValidIndianMobileNumber(String phone) {
         if (phone == null) return false;
         String digits = phone.replaceAll("[^0-9]", "");

@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from '../utils/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type AuthMethod = 'google' | 'email';
@@ -22,6 +22,7 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [showCreatePopup, setShowCreatePopup] = useState(false);
 
   const redirectAfterLogin = (authRes: any) => {
     if (authRes.role === 'ROLE_SUPER_ADMIN') navigate('/super-admin');
@@ -55,10 +56,19 @@ export const LoginPage: React.FC = () => {
       await handleFirebaseToken(result.user);
     } catch (err: any) {
       const code = err.code;
-      if (code === 'auth/user-not-found') setError('No account with this email. Please register first.');
-      else if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') setError('Incorrect password. Please try again.');
-      else if (code === 'auth/invalid-email') setError('Enter a valid email address.');
-      else setError(err.message || 'Sign-in failed.');
+      if (code === 'auth/user-not-found') {
+        setShowCreatePopup(true);
+      } else if (code === 'auth/wrong-password') {
+        setError('Incorrect password. Please try again.');
+      } else if (code === 'auth/invalid-credential') {
+        // Firebase masks user-not-found and wrong-password into invalid-credential
+        setError('Invalid credentials. If you don\'t have an account, please create one.');
+        setShowCreatePopup(true);
+      } else if (code === 'auth/invalid-email') {
+        setError('Enter a valid email address.');
+      } else {
+        setError(err.message || 'Sign-in failed.');
+      }
     } finally { setLoading(false); }
   };
 
@@ -220,6 +230,51 @@ export const LoginPage: React.FC = () => {
           <span>Secured by Firebase Authentication</span>
         </motion.div>
       </motion.div>
+
+      {/* CREATE ACCOUNT POPUP MODAL */}
+      <AnimatePresence>
+        {showCreatePopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => setShowCreatePopup(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 sm:p-8 overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-500 to-amber-500"></div>
+              
+              <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-6 text-brand-600">
+                <UserIcon className="w-8 h-8" />
+              </div>
+              
+              <h3 className="text-xl font-black text-slate-900 text-center mb-2">Account Not Found</h3>
+              <p className="text-sm text-slate-500 text-center font-medium mb-8">
+                It looks like you don't have an account with us yet. Would you like to create one now?
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => navigate('/register')}
+                  className="w-full py-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-500/30 transition-all hover:-translate-y-0.5"
+                >
+                  Yes, Create Account
+                </button>
+                <button 
+                  onClick={() => setShowCreatePopup(false)}
+                  className="w-full py-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all"
+                >
+                  No, Try Again
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

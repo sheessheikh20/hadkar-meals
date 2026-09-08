@@ -210,7 +210,7 @@ export const api = {
   getMyBillHistory: () => fetchApi<MonthlyBill[]>('/billing/my-history'),
   downloadInvoicePdf: async (studentId: number, month: string) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/api/billing/pdf/${studentId}?month=${month}`, {
+    const response = await fetch(`${API_BASE}/billing/pdf/${studentId}?month=${month}`, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
