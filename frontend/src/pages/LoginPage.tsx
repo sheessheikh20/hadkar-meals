@@ -13,9 +13,6 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
   // Email/Password state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
