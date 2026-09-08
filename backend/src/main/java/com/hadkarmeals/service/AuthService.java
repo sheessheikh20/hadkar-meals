@@ -10,6 +10,7 @@ import com.hadkarmeals.entity.User;
 import com.hadkarmeals.exception.BusinessException;
 import com.hadkarmeals.exception.ResourceNotFoundException;
 import com.hadkarmeals.repository.EmailOtpRepository;
+import com.hadkarmeals.entity.EmailOtp;
 import com.hadkarmeals.repository.HostelRepository;
 import com.hadkarmeals.repository.StudentRepository;
 import com.hadkarmeals.repository.UserRepository;
@@ -48,13 +49,17 @@ public class AuthService {
             HostelRepository hostelRepository,
             JwtTokenProvider tokenProvider,
             StudentService studentService,
-            AuditLogService auditLogService) {
+            AuditLogService auditLogService,
+            EmailOtpRepository emailOtpRepository,
+            ResendEmailService resendEmailService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.hostelRepository = hostelRepository;
         this.tokenProvider = tokenProvider;
         this.studentService = studentService;
         this.auditLogService = auditLogService;
+        this.emailOtpRepository = emailOtpRepository;
+        this.resendEmailService = resendEmailService;
     }
 
     @PostConstruct

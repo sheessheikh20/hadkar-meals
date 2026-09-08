@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword } from '../utils/firebase';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import disposableDomains from '../utils/disposable_domains.json';
 
 type AuthMethod = 'google' | 'email';
 
@@ -74,8 +75,8 @@ export const RegisterPage: React.FC = () => {
     }
 
     try {
-      // Trigger backend to send OTP via Brevo
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/auth/send-otp`, {
+      // Trigger backend to send OTP via Resend
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080'}/api/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })
@@ -96,7 +97,7 @@ export const RegisterPage: React.FC = () => {
     setOtpLoading(true); setError(null);
     try {
       // Verify OTP with backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/auth/verify-otp`, {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080'}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), otp: otp.trim() })
