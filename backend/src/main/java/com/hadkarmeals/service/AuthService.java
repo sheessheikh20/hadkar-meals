@@ -66,7 +66,7 @@ public class AuthService {
         if (isNewUser) {
             // Create a new stub user — no phone, no password yet (profile completion required)
             user = User.builder()
-                    .phoneNumber("G_" + googleUid)  // placeholder, replaced on profile completion
+                    .phoneNumber("G_" + java.util.UUID.randomUUID().toString().substring(0, 12))  // placeholder, replaced on profile completion
                     .email(email)
                     .googleId(googleUid)
                     .password(null)

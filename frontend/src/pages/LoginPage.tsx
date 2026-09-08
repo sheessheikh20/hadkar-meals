@@ -199,6 +199,7 @@ export const LoginPage: React.FC = () => {
                   </>
                 )}
               </button>
+              {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">{error}</div>}
             </div>
           )}
 
