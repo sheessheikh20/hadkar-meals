@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public auth, menus, health check, and service locations
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                        .requestMatchers("/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menus/today", "/api/service-status/current", "/api/hostels", "/api/hostels/**", "/api/billing/pdf/**").permitAll()
 
                         // H2 console & API Docs restricted to Admin/SuperAdmin
