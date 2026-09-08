@@ -5,8 +5,8 @@ export const AdminSettingsPage: React.FC = () => {
   const [businessName, setBusinessName] = useState<string>('Hadkar Meals');
   const [tagline, setTagline] = useState<string>('Fresh Meals. Every Day.');
   const [subtagline, setSubtagline] = useState<string>('Ghar Ka Khana, Hostel Tak.');
-  const [phone, setPhone] = useState<string>('+91 98765 43210');
-  const [upiId, setUpiId] = useState<string>('hadkarmeals@okaxis');
+  const [phone, setPhone] = useState<string>('+91 97027 62707');
+  const [upiId, setUpiId] = useState<string>('umeshhadkar02-1@okicici');
 
   // WhatsApp template preview
   const [template, setTemplate] = useState<string>(

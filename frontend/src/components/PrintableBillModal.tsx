@@ -110,7 +110,7 @@ export const PrintableBillModal: React.FC<Props> = ({ bill, isOpen, onClose }) =
               Fresh Meals. Every Day. • Ghar Ka Khana, Hostel Tak.
             </p>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Phone: +91 98765 43210 • UPI ID: hadkarmeals@okaxis
+              Phone: +91 97027 62707 • UPI ID: umeshhadkar02-1@okicici
             </p>
           </div>
 
@@ -185,9 +185,9 @@ export const PrintableBillModal: React.FC<Props> = ({ bill, isOpen, onClose }) =
           {/* Payment Info & QR Instructions */}
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-2">
             <p className="font-black text-slate-900">Payment Instructions:</p>
-            <p className="text-slate-600">• Pay via UPI: <strong className="text-brand-700 font-mono font-bold">hadkarmeals@okaxis</strong></p>
+            <p className="text-slate-600">• Pay via UPI: <strong className="text-brand-700 font-mono font-bold">umeshhadkar02-1@okicici</strong></p>
             <p className="text-slate-600">• Or pay via Cash directly to the Hadkar Meals service desk.</p>
-            <p className="text-slate-600">• After paying, share screenshot on WhatsApp to <strong>+91 98765 43210</strong>.</p>
+            <p className="text-slate-600">• After paying, share screenshot on WhatsApp to <strong>+91 97027 62707</strong>.</p>
           </div>
         </div>
       </div>

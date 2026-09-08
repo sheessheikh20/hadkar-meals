@@ -167,7 +167,7 @@ export const AdminBillingPage: React.FC = () => {
       : (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? window.location.origin : 'http://localhost:8081');
     const frontendBase = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5174';
 
-    return `🍱 *HADKAR MEALS - MONTHLY DINNER INVOICE*\n👤 *Customer:* ${b.studentName}\n📍 *Hostel:* ${b.hostelName}\n📅 *Billing Month:* ${b.monthYear}\n\n*Bill Breakdown:*\n🍱 Food Charges: ₹${b.foodCharges}\n➕ Extra Charges: ₹${b.extraCharges}\n💰 Previous Balance: ₹${b.previousBalance}\n─────────────────────\n*Total Bill:* ₹${b.totalAmount}\n*Paid Amount:* ₹${b.paidAmount}\n*Status:* ${statusText}\n*🔴 Net Balance Due:* ₹${b.outstandingBalance}\n\n📄 *Download Monthly Invoice PDF:*\n${backendBase}/api/billing/pdf/${b.studentId}?month=${b.monthYear}\n\n💳 *UPI ID:* hadkarmeals@okaxis\n📞 *Contact / Phone:* +91 98765 43210\n📲 *Direct UPI Pay:* upi://pay?pa=hadkarmeals@okaxis&pn=HadkarMeals&am=${b.outstandingBalance}\n🖼️ *Scan UPI QR Code:* ${frontendBase}/assets/hadkar_upi_qr.jpg\n\nPlease share payment confirmation screenshot once done. Thank you! 🙏`;
+    return `🍱 *HADKAR MEALS - MONTHLY DINNER INVOICE*\n👤 *Customer:* ${b.studentName}\n📍 *Hostel:* ${b.hostelName}\n📅 *Billing Month:* ${b.monthYear}\n\n*Bill Breakdown:*\n🍱 Food Charges: ₹${b.foodCharges}\n➕ Extra Charges: ₹${b.extraCharges}\n💰 Previous Balance: ₹${b.previousBalance}\n─────────────────────\n*Total Bill:* ₹${b.totalAmount}\n*Paid Amount:* ₹${b.paidAmount}\n*Status:* ${statusText}\n*🔴 Net Balance Due:* ₹${b.outstandingBalance}\n\n📄 *Download Monthly Invoice PDF:*\n${backendBase}/api/billing/pdf/${b.studentId}?month=${b.monthYear}\n\n💳 *UPI ID:* umeshhadkar02-1@okicici\n📞 *Contact / Phone:* +91 97027 62707\n📲 *Direct UPI Pay:* upi://pay?pa=umeshhadkar02-1@okicici&pn=HadkarMeals&am=${b.outstandingBalance}\n🖼️ *Scan UPI QR Code:* ${frontendBase}/assets/hadkar_upi_qr.jpg\n\nPlease share payment confirmation screenshot once done. Thank you! 🙏`;
   };
 
   const handleOpenWhatsApp = (b: MonthlyBill) => {
@@ -554,7 +554,7 @@ export const AdminBillingPage: React.FC = () => {
 
                 <div>
                   <span className="text-[10px] font-bold uppercase text-slate-400 block">Contact Phone Number</span>
-                  <span className="font-mono font-bold text-slate-800">+91 98765 43210</span>
+                  <span className="font-mono font-bold text-slate-800">+91 97027 62707</span>
                 </div>
               </div>
             </div>

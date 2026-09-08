@@ -221,9 +221,9 @@ public class BillingService {
                 "*🔴 Net Balance Due:* ₹%s\n\n" +
                 "📄 *Download Monthly Invoice PDF:*\n" +
                 cleanBackend + "/api/billing/pdf/%d?month=%s\n\n" +
-                "💳 *UPI ID:* hadkarmeals@okaxis\n" +
-                "📞 *Contact / Phone:* +91 98765 43210\n" +
-                "📲 *Direct UPI Pay:* upi://pay?pa=hadkarmeals@okaxis&pn=HadkarMeals&am=%s\n" +
+                "💳 *UPI ID:* umeshhadkar02-1@okicici\n" +
+                "📞 *Contact / Phone:* +91 97027 62707\n" +
+                "📲 *Direct UPI Pay:* upi://pay?pa=umeshhadkar02-1@okicici&pn=HadkarMeals&am=%s\n" +
                 "🖼️ *Scan UPI QR Code:* " + cleanFrontend + "/assets/hadkar_upi_qr.jpg\n\n" +
                 "Please share payment confirmation screenshot once done. Thank you! 🙏",
                 student.getFullName(),

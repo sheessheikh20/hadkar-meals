@@ -129,8 +129,8 @@ public class PdfBillService {
             paymentTitle.setSpacingAfter(5);
             document.add(paymentTitle);
 
-            Paragraph p1 = new Paragraph("\u2022 UPI ID: hadkarmeals@okaxis (Scan or transfer directly)", normalFont);
-            Paragraph p2 = new Paragraph("\u2022 Please share payment screenshot via WhatsApp to +91 98765 43210 for instant ledger update.", normalFont);
+            Paragraph p1 = new Paragraph("\u2022 UPI ID: umeshhadkar02-1@okicici (Scan or transfer directly)", normalFont);
+            Paragraph p2 = new Paragraph("\u2022 Please share payment screenshot via WhatsApp to +91 97027 62707 for instant ledger update.", normalFont);
             Paragraph p3 = new Paragraph("\u2022 Thank you for enjoying healthy, home-style meals with Hadkar Meals!", subtitleFont);
             p3.setSpacingBefore(10);
 
