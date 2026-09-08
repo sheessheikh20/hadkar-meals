@@ -35,10 +35,10 @@ export const StudentLedgerPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
             <History className="w-6 h-6 text-brand-600" />
-            <span>Ledger Statement</span>
+            <span>Transaction History</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Immutable transaction history. Every single rupee charged, reversed, or credited.
+            Complete transaction history. Every single rupee charged, reversed, or credited.
           </p>
         </div>
         <button
