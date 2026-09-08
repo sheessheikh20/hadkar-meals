@@ -41,6 +41,13 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getStudentByUserId(id));
     }
 
+    @DeleteMapping("/me")
+    @Operation(summary = "Delete the current user's account")
+    public ResponseEntity<Map<String, String>> deleteMyAccount(@AuthenticationPrincipal UserDetails userDetails) {
+        studentService.deleteStudentByPhoneNumber(userDetails.getUsername());
+        return ResponseEntity.ok(Map.of("message", "Account successfully deleted"));
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Activate or deactivate a student")

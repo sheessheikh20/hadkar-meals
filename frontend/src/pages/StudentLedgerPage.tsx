@@ -57,7 +57,7 @@ export const StudentLedgerPage: React.FC = () => {
             Calculated Net Outstanding
           </span>
           <p className="text-3xl font-black text-amber-400 mt-1">₹{Number(balance).toFixed(2)}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Summed directly from {transactions.length} immutable ledger transactions</p>
+          <p className="text-[11px] text-slate-400 mt-1">Calculated from {transactions.length} recent transactions</p>
         </div>
         <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400">
           <Sparkles className="w-6 h-6" />
@@ -73,7 +73,7 @@ export const StudentLedgerPage: React.FC = () => {
         </div>
       ) : transactions.length === 0 ? (
         <div className="bg-white rounded-3xl p-10 text-center border border-slate-200">
-          <p className="text-slate-500 text-sm">No ledger transactions recorded yet.</p>
+          <p className="text-slate-500 text-sm">No transactions recorded yet.</p>
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xs">

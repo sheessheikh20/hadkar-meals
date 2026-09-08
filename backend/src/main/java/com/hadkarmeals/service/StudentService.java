@@ -68,6 +68,32 @@ public class StudentService {
         return student;
     }
 
+    @Transactional
+    public void deleteStudentByPhoneNumber(String phoneNumber) {
+        User currentUser = userRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        try {
+            // Delete from Firebase
+            if (currentUser.getGoogleId() != null) {
+                com.google.firebase.auth.FirebaseAuth.getInstance().deleteUser(currentUser.getGoogleId());
+            }
+        } catch (Exception e) {
+            // Log the error but proceed with DB deletion if it's a firebase error (e.g., user not found)
+            System.err.println("Error deleting user from Firebase: " + e.getMessage());
+        }
+
+        userRepository.delete(currentUser);
+        
+        auditLogService.log(
+                "DELETE_ACCOUNT",
+                currentUser.getPhoneNumber(),
+                "User",
+                String.valueOf(currentUser.getId()),
+                "Student deleted their account"
+        );
+    }
+
     public Student getStudentByUserId(Long userId) {
         return studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user ID: " + userId));

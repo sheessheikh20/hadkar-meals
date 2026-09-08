@@ -276,6 +276,9 @@ export const api = {
       { method: 'POST' }
     ),
 
+  // Students / Profile
+  deleteMyAccount: () => fetchApi<{message: string}>('/students/me', { method: 'DELETE' }),
+
   // Service Locations (Hostels)
   getHostels: () => fetchApi<Hostel[]>('/hostels'),
   createHostel: (data: { name: string; address?: string }) =>

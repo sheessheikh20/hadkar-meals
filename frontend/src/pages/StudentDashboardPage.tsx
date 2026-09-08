@@ -252,13 +252,13 @@ export const StudentDashboardPage: React.FC = () => {
       ) : (
         <div className="px-4 mt-6 space-y-6">
           
-          {/* Menu Showcase Horizontal Scroll */}
+          {/* Menu Showcase Grid */}
           {dinnerMeal.menuItems && dinnerMeal.menuItems.length > 0 && (
             <div>
-              <h2 className="text-sm font-black text-slate-900 mb-3 tracking-tight">What's Cooking?</h2>
-              <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 snap-x hide-scrollbar">
+              <h2 className="text-sm font-black text-slate-900 mb-3 tracking-tight">Today's Menu</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {dinnerMeal.menuItems.map(item => (
-                  <div key={item.id} className="snap-start shrink-0 w-28 p-3 rounded-2xl bg-white border border-slate-100 shadow-xs flex flex-col items-center text-center">
+                  <div key={item.id} className="p-3 rounded-2xl bg-white border border-slate-100 shadow-xs flex flex-col items-center text-center">
                     <div className="text-2xl mb-1">{item.category === 'SABZI' ? '🥘' : item.category === 'DAL' ? '🍲' : item.category === 'RICE' ? '🍚' : '🫓'}</div>
                     <span className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight">{item.name}</span>
                     <span className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mt-1">{item.category}</span>

@@ -80,7 +80,7 @@ export const StudentBillsPage: React.FC = () => {
               to="/student/ledger"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
             >
-              <span>View Transaction Ledger</span>
+              <span>View Transaction History</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -199,7 +199,7 @@ export const StudentBillsPage: React.FC = () => {
               to="/student/ledger"
               className="px-4 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors sm:ml-auto"
             >
-              <span>View Ledger Audit Trail</span>
+              <span>View Transaction History</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
