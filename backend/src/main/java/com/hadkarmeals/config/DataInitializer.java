@@ -141,7 +141,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // Delete all student users (keep only Admin & SuperAdmin)
         List<User> students = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.ROLE_STUDENT)
+                .filter(u -> u.getRole() == Role.ROLE_USER)
                 .toList();
         userRepository.deleteAll(students);
         log.info("Purged {} student users and all related orders, bills, and transactions.", students.size());
@@ -304,7 +304,7 @@ public class DataInitializer implements CommandLineRunner {
                             .phoneNumber(phone)
                             .email(email)
                             .password("Student123")
-                            .role(Role.ROLE_STUDENT)
+                            .role(Role.ROLE_USER)
                             .active(true)
                             .build())
             );

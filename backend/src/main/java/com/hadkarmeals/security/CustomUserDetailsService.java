@@ -29,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (user.getRole() == com.hadkarmeals.entity.Role.ROLE_ADMIN) {
             authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         } else {
-            authorities.add(new SimpleGrantedAuthority("ROLE_STUDENT"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         }
 
         return new org.springframework.security.core.userdetails.User(

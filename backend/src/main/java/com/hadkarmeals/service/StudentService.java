@@ -38,7 +38,7 @@ public class StudentService {
         User user = userRepository.findByPhoneNumber(phoneNumber)
                 .orElseGet(() -> userRepository.save(User.builder()
                         .phoneNumber(phoneNumber)
-                        .role(Role.ROLE_STUDENT)
+                        .role(Role.ROLE_USER)
                         .active(true)
                         .build()));
 

@@ -106,7 +106,7 @@ public class AuthService {
                     .googleId(googleUid)
                     .googleName(name)
                     .password(null)
-                    .role(Role.ROLE_STUDENT)
+                    .role(Role.ROLE_USER)
                     .active(true)
                     .build();
             user = userRepository.save(user);
@@ -254,7 +254,7 @@ public class AuthService {
                 .phoneNumber(phone)
                 .email(request.getEmail() != null && !request.getEmail().trim().isEmpty() ? request.getEmail().trim().toLowerCase() : null)
                 .password(request.getPassword().trim())
-                .role(Role.ROLE_STUDENT)
+                .role(Role.ROLE_USER)
                 .active(true)
                 .build();
         user = userRepository.save(user);
