@@ -20,7 +20,6 @@ export const Navbar: React.FC = () => {
   const { user, isAdmin, isStudent, logout } = useAuth();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (isStudent && user) {
@@ -189,6 +188,7 @@ export const Navbar: React.FC = () => {
                   <p className="font-bold text-xs text-slate-800 truncate">
                     {user.fullName ? user.fullName.split(' ')[0] : user.phoneNumber}
                   </p>
+                  <p className="text-[10px] text-slate-400 truncate">
                     {user.hostelName || (isAdmin ? 'Admin / Developer' : 'Student')}
                   </p>
                 </div>
@@ -201,149 +201,10 @@ export const Navbar: React.FC = () => {
                 </button>
               </div>
             )}
-
-            {/* Mobile / Tablet Menu Trigger (Visible under xl: 1280px so side-by-side never breaks) */}
-            {!isStudent && (
-              <div className="xl:hidden flex items-center ml-1">
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                  aria-label="Toggle navigation menu"
-                >
-                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Mobile / Tablet Dropdown Menu */}
-      {mobileMenuOpen && (
-        <div className="xl:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-1.5 shadow-xl animate-fadeIn">
-          {isAdmin ? (
-            <>
-              <Link
-                to="/admin/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/admin/dashboard') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4 text-brand-600" />
-                <span>Dashboard & Live Orders</span>
-              </Link>
-              <Link
-                to="/admin/menu"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/admin/menu') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <UtensilsCrossed className="w-4 h-4 text-amber-600" />
-                <span>Tonight's Menu</span>
-              </Link>
-              <Link
-                to="/admin/kitchen"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/admin/kitchen') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <ChefHat className="w-4 h-4 text-slate-700" />
-                <span>Kitchen Sheet</span>
-              </Link>
-              <Link
-                to="/admin/billing"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/admin/billing') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                <span>Monthly Billing</span>
-              </Link>
-              <Link
-                to="/admin/students"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/admin/students') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <Users className="w-4 h-4 text-blue-600" />
-                <span>Students & Locations</span>
-              </Link>
-              <Link
-                to="/admin/system"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/admin/system') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <Database className="w-4 h-4 text-indigo-600" />
-                <span>System & Catalog</span>
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/student/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/student/dashboard') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <UtensilsCrossed className="w-4 h-4 text-brand-600" />
-                <span>Today's Dinner</span>
-              </Link>
-              <Link
-                to="/student/orders"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/student/orders') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <ChefHat className="w-4 h-4 text-slate-700" />
-                <span>My Orders</span>
-              </Link>
-              <Link
-                to="/student/bills"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/student/bills') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <Receipt className="w-4 h-4 text-emerald-600" />
-                <span>Monthly Bills</span>
-              </Link>
-              <Link
-                to="/student/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold ${
-                  isActive('/student/profile') ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <UserIcon className="w-4 h-4 text-slate-700" />
-                <span>My Profile</span>
-              </Link>
-            </>
-          )}
-
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between px-1">
-            <div className="text-xs">
-              <p className="font-bold text-slate-800">{user?.fullName || user?.phoneNumber}</p>
-              <p className="text-[10px] text-slate-400">{user?.hostelName || ''}</p>
-            </div>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-xl transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </div>
-      )}
     </nav>
   );
 };

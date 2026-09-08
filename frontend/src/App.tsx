@@ -52,10 +52,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 w-full max-w-full overflow-x-hidden antialiased">
       {user && <Navbar />}
-      <main className={`flex-1 w-full max-w-full overflow-x-hidden ${user && isStudent ? 'pb-24 md:pb-8' : 'pb-8'}`}>
+      <main className={`flex-1 w-full max-w-full overflow-x-hidden ${user ? 'pb-24 md:pb-8' : 'pb-8'}`}>
         {children}
       </main>
-      {user && isStudent && <BottomNav />}
+      {user && <BottomNav />}
       {user && isStudent && <NotificationPromptModal />}
     </div>
   );
