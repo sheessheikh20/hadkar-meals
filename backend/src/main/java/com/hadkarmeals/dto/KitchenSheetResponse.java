@@ -21,6 +21,7 @@ public class KitchenSheetResponse {
     private long totalHalf;
     private long totalFull;
     private long totalRotis;
+    private long totalExtraRotis;
     private List<KitchenOrderItem> items;
     private Map<String, HostelCount> hostelBreakdown;
     private Map<String, Long> sabziBreakdown;

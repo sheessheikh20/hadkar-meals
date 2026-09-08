@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { Meal, OrderType, HalfTiffinChoice, Order, MenuItem } from '../types';
 import { ServiceStatusBanner } from '../components/ServiceStatusBanner';
-import { formatDateDDMMYYYY } from '../utils/dateUtils';
+import { formatDateDDMMYYYY, formatTime12Hour } from '../utils/dateUtils';
 import {
   UtensilsCrossed,
   Clock,
@@ -383,7 +383,7 @@ export const StudentDashboardPage: React.FC = () => {
       setStatusInfo(statData);
 
       const dinner = mealsData.find((m: any) => m.mealType === 'DINNER') || mealsData[0];
-      if (!dinner || dinner.status !== 'PUBLISHED' || dinner.cutoffReached) {
+      if (!dinner || dinner.status !== 'PUBLISHED' || dinner.cutoffReached || dinner.notOpenYet) {
         setCart([]);
       }
     } catch (e: any) {
@@ -428,6 +428,7 @@ export const StudentDashboardPage: React.FC = () => {
     dinnerMeal &&
     dinnerMeal.status === 'PUBLISHED' &&
     !dinnerMeal.cutoffReached &&
+    !dinnerMeal.notOpenYet &&
     dinnerMeal.open !== false
   );
   const isOrdersClosed = !isOrdersOpen;
@@ -537,10 +538,17 @@ export const StudentDashboardPage: React.FC = () => {
   const handlePlaceAllOrders = async () => {
     if (!dinnerMeal || cart.length === 0) return;
 
-    // 1. Check if tonight's dinner orders are closed
-    if (dinnerMeal.status === 'CLOSED') {
+    // 1. Check if tonight's dinner orders are closed or not open yet or cutoff reached
+    if (dinnerMeal.status === 'CLOSED' || dinnerMeal.cutoffReached) {
       setMessage({
-        text: `⛔ Orders for tonight's dinner are currently closed by the kitchen.`,
+        text: `⛔ Orders for tonight's dinner are closed (Cutoff was ${formatTime12Hour(dinnerMeal.orderCutoffTime)}).`,
+        type: 'error',
+      });
+      return;
+    }
+    if (dinnerMeal.notOpenYet) {
+      setMessage({
+        text: `⏳ Orders for tonight's dinner open at ${formatTime12Hour(dinnerMeal.orderOpenTime)}.`,
         type: 'error',
       });
       return;
@@ -714,12 +722,16 @@ export const StudentDashboardPage: React.FC = () => {
                       🌙 Tonight's Dinner
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached
+                      dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached && !dinnerMeal.notOpenYet
                         ? 'bg-emerald-400 text-slate-900'
-                        : 'bg-black/30 text-white'
+                        : dinnerMeal.notOpenYet
+                        ? 'bg-amber-300 text-slate-950 font-black'
+                        : 'bg-black/40 text-white'
                     }`}>
-                      {dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached
+                      {dinnerMeal.status === 'PUBLISHED' && !dinnerMeal.cutoffReached && !dinnerMeal.notOpenYet
                         ? '🟢 ACCEPTING ORDERS'
+                        : dinnerMeal.notOpenYet
+                        ? `⏳ OPENS AT ${formatTime12Hour(dinnerMeal.orderOpenTime)}`
                         : '⛔ ORDERS CLOSED'}
                     </span>
                     <span className="text-xs text-amber-100 font-bold">
@@ -735,7 +747,7 @@ export const StudentDashboardPage: React.FC = () => {
                   <span className="text-[10px] uppercase font-bold text-amber-200 block">Daily Ordering Window</span>
                   <span className="text-base sm:text-lg font-black text-white flex items-center sm:justify-end gap-1.5">
                     <Clock className="w-4 h-4 text-amber-300" />
-                    <span>{dinnerMeal.orderOpenTime?.slice(0, 5) || '19:00'} – {dinnerMeal.orderCutoffTime?.slice(0, 5) || '20:00'}</span>
+                    <span>{formatTime12Hour(dinnerMeal.orderOpenTime)} – {formatTime12Hour(dinnerMeal.orderCutoffTime)}</span>
                   </span>
                 </div>
               </div>
@@ -855,7 +867,7 @@ export const StudentDashboardPage: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
-                      Your meal is registered with the kitchen. You can edit or cancel your orders in My Orders until closing time ({dinnerMeal?.orderCutoffTime?.slice(0, 5) || '8:00 PM'}).
+                      Your meal is registered with the kitchen. You can edit or cancel your orders in My Orders until closing time ({formatTime12Hour(dinnerMeal?.orderCutoffTime)}).
                     </p>
                   </div>
                 </div>

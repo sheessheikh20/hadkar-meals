@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { Meal, MenuItem } from '../types';
 import { UtensilsCrossed, Clock, Bell, Moon, Trash2, StopCircle, PlayCircle, RefreshCw, X, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { formatDateDDMMYYYY } from '../utils/dateUtils';
+import { formatDateDDMMYYYY, formatTime12Hour } from '../utils/dateUtils';
 
 export const AdminMenuPage: React.FC = () => {
   const [mealDate, setMealDate] = useState<string>(
@@ -274,32 +274,90 @@ export const AdminMenuPage: React.FC = () => {
               />
             </div>
 
+            {/* Orders Open Time with 12h quick chips */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Orders Open Time</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Order Shuru (Open Time)</span>
+                </label>
+                <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                  {formatTime12Hour(openTime)}
+                </span>
+              </div>
               <input
                 type="time"
                 required
                 value={openTime}
                 onChange={(e) => setOpenTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               />
+              {/* 1-tap quick buttons for open time */}
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Quick:</span>
+                {[
+                  { label: '6:30 PM', val: '18:30' },
+                  { label: '7:00 PM', val: '19:00' },
+                  { label: '7:30 PM', val: '19:30' }
+                ].map((chip) => (
+                  <button
+                    key={chip.val}
+                    type="button"
+                    onClick={() => setOpenTime(chip.val)}
+                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                      openTime === chip.val
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
+            {/* Order Closing Time with 12h quick chips */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-orange-600" />
-                <span>Order Closing Time</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Order Band (Cutoff Time)</span>
+                </label>
+                <span className="text-xs font-black text-orange-700 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200">
+                  {formatTime12Hour(cutoffTime)}
+                </span>
+              </div>
               <input
                 type="time"
                 required
                 value={cutoffTime}
                 onChange={(e) => setCutoffTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
               />
+              {/* 1-tap quick buttons for cutoff time */}
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Quick:</span>
+                {[
+                  { label: '8:00 PM', val: '20:00' },
+                  { label: '8:30 PM', val: '20:30' },
+                  { label: '9:00 PM', val: '21:00' },
+                  { label: '9:30 PM', val: '21:30' },
+                  { label: '10:00 PM', val: '22:00' }
+                ].map((chip) => (
+                  <button
+                    key={chip.val}
+                    type="button"
+                    onClick={() => setCutoffTime(chip.val)}
+                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                      cutoffTime === chip.val
+                        ? 'bg-orange-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -439,18 +497,7 @@ export const AdminMenuPage: React.FC = () => {
 
             <div className="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
               <Clock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-              <span>Ordering Window: <strong className="text-slate-800">{(() => {
-                const fmt = (t: string) => {
-                  if (!t) return '';
-                  const [hStr, mStr] = t.split(':');
-                  const h = parseInt(hStr, 10);
-                  if (isNaN(h)) return t;
-                  const ampm = h >= 12 ? 'PM' : 'AM';
-                  const h12 = h % 12 === 0 ? 12 : h % 12;
-                  return `${h12}:${mStr || '00'} ${ampm}`;
-                };
-                return `${fmt(openTime)} – ${fmt(cutoffTime)}`;
-              })()}</strong></span>
+              <span>Ordering Window: <strong className="text-slate-800">{formatTime12Hour(openTime)} – {formatTime12Hour(cutoffTime)}</strong></span>
             </div>
 
             {/* Selected Sabzis Tonight */}

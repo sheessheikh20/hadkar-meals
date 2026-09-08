@@ -47,6 +47,7 @@ export interface Meal {
   status: MealStatus;
   menuItems: MenuItem[];
   cutoffReached?: boolean;
+  notOpenYet?: boolean;
   open?: boolean;
   closedToday?: boolean;
   closureReason?: string;
@@ -181,6 +182,7 @@ export interface KitchenSheet {
   totalFull: number;
   totalHalf: number;
   totalRotis?: number;
+  totalExtraRotis?: number;
   items: KitchenOrderItem[];
   hostelBreakdown: Record<string, { full: number; half: number; total: number }>;
   sabziBreakdown?: Record<string, number>;

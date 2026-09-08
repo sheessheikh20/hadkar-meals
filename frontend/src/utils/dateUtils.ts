@@ -71,3 +71,22 @@ export function formatMonthYearDDMMYYYY(monthYearInput?: string | null): string 
   return formatDateDDMMYYYY(monthYearInput);
 }
 
+export function formatTime12Hour(timeInput?: string | null): string {
+  if (!timeInput) return '—';
+  try {
+    const trimmed = timeInput.trim();
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})/);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const mins = match[2];
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${mins} ${ampm}`;
+    }
+    return timeInput;
+  } catch {
+    return String(timeInput);
+  }
+}
+

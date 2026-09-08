@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { KitchenSheet } from '../types';
 import { ChefHat, Printer, RefreshCw, PhoneCall, Building, Utensils } from 'lucide-react';
-import { formatDateDDMMYYYY } from '../utils/dateUtils';
+import { formatDateDDMMYYYY, formatTime12Hour } from '../utils/dateUtils';
 
 export const AdminKitchenPage: React.FC = () => {
   const [date, setDate] = useState<string>(new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
@@ -100,11 +100,11 @@ export const AdminKitchenPage: React.FC = () => {
           </div>
 
           <div className="bg-white p-4 sm:p-5 rounded-3xl border border-amber-200 bg-amber-50/50 shadow-xs text-center">
-            <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Total Rotis</span>
+            <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Extra Roti / Chapati</span>
             <p className="text-3xl font-black text-amber-900 mt-1">
-              {sheet?.totalRotis != null ? sheet.totalRotis : ((sheet?.totalOrders || 0) * 4)}
+              {sheet?.totalExtraRotis != null ? sheet.totalExtraRotis : 0}
             </p>
-            <span className="text-[11px] text-amber-700 font-bold">Base 4/tiffin + extras</span>
+            <span className="text-[11px] text-amber-700 font-bold">Total extra rotis to make</span>
           </div>
         </div>
 
@@ -217,9 +217,17 @@ export const AdminKitchenPage: React.FC = () => {
                         {item.selectedSabzi || '—'}
                       </td>
                       <td className="py-3 px-4 font-bold text-slate-700">
-                        {item.extraRotis && item.extraRotis > 0 ? `+${item.extraRotis} extra` : '—'}
+                        {item.extraRotis && item.extraRotis > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-xs">
+                            +{item.extraRotis} Extra Roti
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-medium text-xs">0</span>
+                        )}
                       </td>
-                      <td className="py-3 px-4 text-slate-400 font-mono">{item.orderedAt}</td>
+                      <td className="py-3 px-4 text-slate-600 font-medium text-xs">
+                        {formatTime12Hour(item.orderedAt)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

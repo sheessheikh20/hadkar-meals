@@ -23,6 +23,18 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
 
+    public static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
+
+    private static String formatTime12(LocalTime time) {
+        if (time == null) return "";
+        int h = time.getHour();
+        int m = time.getMinute();
+        String ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12;
+        if (h == 0) h = 12;
+        return String.format("%d:%02d %s", h, m, ampm);
+    }
+
     private final OrderRepository orderRepository;
     private final MealRepository mealRepository;
     private final StudentRepository studentRepository;
@@ -80,9 +92,15 @@ public class OrderService {
             throw new BusinessException("Orders are not currently open for this meal");
         }
 
-        // 3. Check Cutoff Time
-        if (orderDate.isEqual(LocalDate.now()) && LocalTime.now().isAfter(meal.getOrderCutoffTime())) {
-            throw new BusinessException("Orders closed at " + meal.getOrderCutoffTime() + ". New orders can no longer be accepted.");
+        // 3. Check Open Time and Cutoff Time in IST
+        if (orderDate.isEqual(LocalDate.now(IST))) {
+            LocalTime now = LocalTime.now(IST);
+            if (meal.getOrderOpenTime() != null && now.isBefore(meal.getOrderOpenTime())) {
+                throw new BusinessException("Orders are not open yet. Orders open today at " + formatTime12(meal.getOrderOpenTime()) + ".");
+            }
+            if (meal.getOrderCutoffTime() != null && now.isAfter(meal.getOrderCutoffTime())) {
+                throw new BusinessException("Orders for tonight closed at " + formatTime12(meal.getOrderCutoffTime()) + ". New orders can no longer be accepted.");
+            }
         }
 
         // 4. Quantity & Half Tiffin Choice & Price Snapshot
@@ -202,13 +220,13 @@ public class OrderService {
         // Enforce Cutoff and Closed State (with 30-min grace period after order creation)
         Meal meal = order.getMeal();
         boolean withinGracePeriod = order.getCreatedAt() != null && 
-                order.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(30));
-        boolean beforeCutoff = order.getOrderDate().isEqual(LocalDate.now())
-                && LocalTime.now().isBefore(meal.getOrderCutoffTime())
+                order.getCreatedAt().isAfter(LocalDateTime.now(IST).minusMinutes(30));
+        boolean beforeCutoff = order.getOrderDate().isEqual(LocalDate.now(IST))
+                && LocalTime.now(IST).isBefore(meal.getOrderCutoffTime())
                 && meal.getStatus() != MealStatus.CLOSED;
 
         if (!beforeCutoff && !withinGracePeriod) {
-            throw new BusinessException("Dinner order accepting has closed (cutoff was " + meal.getOrderCutoffTime() + "). Cancellations are no longer available as kitchen preparation has begun.");
+            throw new BusinessException("Dinner order accepting has closed (cutoff was " + formatTime12(meal.getOrderCutoffTime()) + "). Cancellations are no longer available as kitchen preparation has begun.");
         }
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -265,10 +283,10 @@ public class OrderService {
         }
 
         Meal meal = order.getMeal();
-        if (!order.getOrderDate().isEqual(LocalDate.now())
-                || LocalTime.now().isAfter(meal.getOrderCutoffTime())
+        if (!order.getOrderDate().isEqual(LocalDate.now(IST))
+                || LocalTime.now(IST).isAfter(meal.getOrderCutoffTime())
                 || meal.getStatus() == MealStatus.CLOSED) {
-            throw new BusinessException("Orders closed at " + meal.getOrderCutoffTime() + ". Edits can no longer be accepted.");
+            throw new BusinessException("Orders closed at " + formatTime12(meal.getOrderCutoffTime()) + ". Edits can no longer be accepted.");
         }
 
         // 1. Calculate new options
@@ -443,7 +461,7 @@ public class OrderService {
 
     @Transactional
     public int deliverOrdersByHostel(Long hostelId, LocalDate date, String adminUsername) {
-        LocalDate queryDate = date != null ? date : LocalDate.now();
+        LocalDate queryDate = date != null ? date : LocalDate.now(IST);
         List<Order> orders = orderRepository.findByDateAndHostelIdAndStatus(queryDate, hostelId, OrderStatus.CONFIRMED);
 
         String hostelName = "your hostel";
@@ -506,10 +524,10 @@ public class OrderService {
 
     private OrderResponse mapToResponse(Order order) {
         boolean withinGracePeriod = order.getCreatedAt() != null && 
-                order.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(30));
+                order.getCreatedAt().isAfter(LocalDateTime.now(IST).minusMinutes(30));
         boolean canCancel = order.getStatus() == OrderStatus.CONFIRMED
-                && (withinGracePeriod || (order.getOrderDate().isEqual(LocalDate.now())
-                && LocalTime.now().isBefore(order.getMeal().getOrderCutoffTime())
+                && (withinGracePeriod || (order.getOrderDate().isEqual(LocalDate.now(IST))
+                && LocalTime.now(IST).isBefore(order.getMeal().getOrderCutoffTime())
                 && order.getMeal().getStatus() == com.hadkarmeals.entity.MealStatus.PUBLISHED));
 
         return OrderResponse.builder()

@@ -14,6 +14,7 @@ import java.util.*;
 @Service
 public class KitchenService {
 
+    private static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
     private final OrderRepository orderRepository;
 
     public KitchenService(OrderRepository orderRepository) {
@@ -21,7 +22,7 @@ public class KitchenService {
     }
 
     public KitchenSheetResponse getKitchenSheet(LocalDate date, MealType mealType) {
-        LocalDate queryDate = date != null ? date : LocalDate.now();
+        LocalDate queryDate = date != null ? date : LocalDate.now(IST);
         MealType queryType = MealType.DINNER; // Dinner-only service
 
         List<Order> orders = orderRepository.findByOrderDateAndMealTypeAndStatusIn(
@@ -39,6 +40,7 @@ public class KitchenService {
         long fullCount = 0;
         long halfCount = 0;
         long totalRotis = 0;
+        long totalExtraRotis = 0;
         List<KitchenSheetResponse.KitchenOrderItem> items = new ArrayList<>();
         Map<String, KitchenSheetResponse.HostelCount> breakdown = new HashMap<>();
 
@@ -50,6 +52,7 @@ public class KitchenService {
             else halfCount += qty;
 
             int extra = o.getExtraRotis() != null ? o.getExtraRotis() : 0;
+            totalExtraRotis += extra;
             boolean isDalRice = o.getOrderType() == OrderType.HALF && "DAL_RICE".equalsIgnoreCase(o.getHalfTiffinChoice());
             if (!isDalRice) {
                 totalRotis += (4L * qty) + extra; // 4 rotis per tiffin + extra rotis (Dal+Rice has 0 rotis)
@@ -58,6 +61,8 @@ public class KitchenService {
             String hostelName = o.getStudent().getHostel() != null ? o.getStudent().getHostel().getName() : "Unassigned";
             String sabziName = isDalRice ? "Dal + Steamed Rice" : (o.getSelectedSabzi() != null ? o.getSelectedSabzi() : "Standard Sabzi");
             sabziBreakdown.put(sabziName, sabziBreakdown.getOrDefault(sabziName, 0L) + qty);
+
+            LocalTime orderTime = o.getCreatedAt() != null ? o.getCreatedAt().toLocalTime() : LocalTime.now(IST);
 
             items.add(KitchenSheetResponse.KitchenOrderItem.builder()
                     .orderId(o.getId())
@@ -69,7 +74,7 @@ public class KitchenService {
                     .selectedSabzi(sabziName)
                     .extraRotis(extra)
                     .quantity(qty)
-                    .orderedAt(o.getCreatedAt().toLocalTime())
+                    .orderedAt(orderTime)
                     .build());
 
             KitchenSheetResponse.HostelCount hc = breakdown.computeIfAbsent(hostelName,
@@ -89,6 +94,7 @@ public class KitchenService {
                 .totalFull(fullCount)
                 .totalHalf(halfCount)
                 .totalRotis(totalRotis)
+                .totalExtraRotis(totalExtraRotis)
                 .items(items)
                 .hostelBreakdown(breakdown)
                 .sabziBreakdown(sabziBreakdown)

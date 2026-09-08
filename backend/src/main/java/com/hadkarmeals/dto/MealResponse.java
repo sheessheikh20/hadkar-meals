@@ -29,6 +29,7 @@ public class MealResponse {
 
     // Student contextual properties
     private boolean cutoffReached;
+    private boolean notOpenYet;
     private boolean open;
     private boolean closedToday;
     private String closureReason;

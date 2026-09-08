@@ -208,9 +208,11 @@ public class MenuService {
         return meal;
     }
 
+    private static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
+
     public List<MealResponse> getTodayMeals(Long studentId) {
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
+        LocalDate today = LocalDate.now(IST);
+        LocalTime now = LocalTime.now(IST);
 
         List<Meal> meals = mealRepository.findByMealDate(today);
         List<MealResponse> responses = new ArrayList<>();
@@ -222,8 +224,9 @@ public class MenuService {
 
         if (mealOpt.isPresent()) {
             Meal m = mealOpt.get();
-            boolean cutoff = now.isAfter(m.getOrderCutoffTime());
-            boolean isOpen = m.getStatus() == MealStatus.PUBLISHED && !isClosed && !cutoff;
+            boolean isBeforeOpen = m.getOrderOpenTime() != null && now.isBefore(m.getOrderOpenTime());
+            boolean cutoff = m.getOrderCutoffTime() != null && now.isAfter(m.getOrderCutoffTime());
+            boolean isOpen = m.getStatus() == MealStatus.PUBLISHED && !isClosed && !cutoff && !isBeforeOpen;
 
             OrderResponse userOrder = null;
             List<OrderResponse> userOrders = new ArrayList<>();
@@ -243,7 +246,7 @@ public class MenuService {
                         .priceAtOrder(o.getPriceAtOrder())
                         .status(o.getStatus())
                         .createdAt(o.getCreatedAt())
-                        .canCancel(o.getStatus() == OrderStatus.CONFIRMED && ((o.getCreatedAt() != null && o.getCreatedAt().isAfter(java.time.LocalDateTime.now().minusMinutes(30))) || (!cutoff && !isClosed)))
+                        .canCancel(o.getStatus() == OrderStatus.CONFIRMED && ((o.getCreatedAt() != null && o.getCreatedAt().isAfter(java.time.LocalDateTime.now(IST).minusMinutes(30))) || (!cutoff && !isClosed)))
                         .build()).collect(Collectors.toList());
 
                 if (!userOrders.isEmpty()) {
@@ -263,6 +266,7 @@ public class MenuService {
                     .emergencyReason(m.getEmergencyReason())
                     .menuItems(m.getMenuItems())
                     .cutoffReached(cutoff)
+                    .notOpenYet(isBeforeOpen)
                     .open(isOpen)
                     .closedToday(isClosed)
                     .closureReason(closureReason)

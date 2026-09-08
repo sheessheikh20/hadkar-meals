@@ -185,13 +185,30 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // ── 5. SEED SERVICE LOCATIONS if none exist ───────────────────────────────
-        if (hostelRepository.count() == 0) {
-            hostelRepository.save(Hostel.builder().name("Mahadev Hostel").address("Near City Engineering College, North Campus").active(true).build());
-            hostelRepository.save(Hostel.builder().name("Shanti Niwas").address("Lane 4, Model Colony, West Gate").active(true).build());
-            hostelRepository.save(Hostel.builder().name("Hostel B (Sarvodaya)").address("Opposite University Sports Complex").active(true).build());
-            log.info("Created default service locations.");
+        // ── 5. SEED EXACT SERVICE LOCATIONS ──────────────────────────────────────
+        List<String> officialLocations = List.of("Mahadev Hostel", "Kelipada", "Lokhandwala Thakur Complex");
+        for (String locName : officialLocations) {
+            if (hostelRepository.findByName(locName).isEmpty()) {
+                hostelRepository.save(Hostel.builder()
+                        .name(locName)
+                        .address(locName + ", Mumbai")
+                        .active(true)
+                        .build());
+            }
         }
+        // Cleanup old dummy locations
+        List<Hostel> allHostels = hostelRepository.findAll();
+        for (Hostel h : allHostels) {
+            if (!officialLocations.contains(h.getName())) {
+                if (studentRepository.findByHostelId(h.getId()).isEmpty()) {
+                    hostelRepository.delete(h);
+                } else {
+                    h.setActive(false);
+                    hostelRepository.save(h);
+                }
+            }
+        }
+        log.info("Synchronized exact 3 official service locations: Mahadev Hostel, Kelipada, Lokhandwala Thakur Complex.");
 
         // ── 6. SEED NOTIFICATION TEMPLATES if none exist ─────────────────────────
         if (templateRepository.count() == 0) {
@@ -229,12 +246,15 @@ public class DataInitializer implements CommandLineRunner {
         log.info("✅ DataInitializer done. Admin=1234567890/HadkarMeals | SuperAdmin=0987654321/Shees000");
     }
 
+    private static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
+
     private void seedTodayDinnerMenu() {
-        Meal todayDinner = mealRepository.findByMealDateAndMealType(LocalDate.now(), MealType.DINNER).orElse(null);
+        LocalDate today = LocalDate.now(IST);
+        Meal todayDinner = mealRepository.findByMealDateAndMealType(today, MealType.DINNER).orElse(null);
         List<MenuItem> allItems = menuItemRepository.findAll();
         if (todayDinner == null) {
             todayDinner = Meal.builder()
-                    .mealDate(LocalDate.now())
+                    .mealDate(today)
                     .mealType(MealType.DINNER)
                     .halfPrice(new BigDecimal("65.00"))
                     .fullPrice(new BigDecimal("100.00"))

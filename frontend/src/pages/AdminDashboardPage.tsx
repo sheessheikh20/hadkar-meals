@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { DashboardStats, Order } from '../types';
-import { formatDateDDMMYYYY } from '../utils/dateUtils';
+import { formatDateDDMMYYYY, formatTime12Hour } from '../utils/dateUtils';
 import {
   ShoppingBag,
   IndianRupee,
@@ -225,7 +225,7 @@ export const AdminDashboardPage: React.FC = () => {
             {todayMenu && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-orange-600" />
-                <span>Ordering Window: <strong className="text-slate-900">{todayMenu.orderOpenTime?.slice(0, 5) || '19:00'} – {todayMenu.orderCutoffTime?.slice(0, 5) || '20:00'}</strong></span>
+                <span>Ordering Window: <strong className="text-slate-900">{formatTime12Hour(todayMenu.orderOpenTime)} – {formatTime12Hour(todayMenu.orderCutoffTime)}</strong></span>
               </span>
             )}
           </div>
@@ -352,7 +352,7 @@ export const AdminDashboardPage: React.FC = () => {
             <span className="text-xl font-black text-amber-950 mt-0.5 block">{halfTiffinsCount}</span>
           </div>
           <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 block">Extra Rotis</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 block">Extra Rotis To Make</span>
             <span className="text-xl font-black text-blue-950 mt-0.5 block">{extraRotisCount}</span>
           </div>
           <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
