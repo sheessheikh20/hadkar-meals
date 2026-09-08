@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: hadkar-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: hadkarmeals
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hadkar-backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: hadkarmeals
+      DB_USER: postgres
+      DB_PASSWORD: postgrespassword
+      JWT_SECRET: 4a7c3b28f1e54d89a7c3b28f1e54d89a7c3b28f1e54d89a7c3b28f1e54d89b3f
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hadkar-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:

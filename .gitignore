@@ -1,0 +1,39 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# Node
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+
+# Database & runtime
+*.db
+*.db-wal
+*.db-shm
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# IDE & OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Gemini / Antigravity artifacts
+.gemini/
+.system_generated/
+.tempmediaStorage/
+.user_uploaded/
+scratch/
+
+# Secrets & Credentials
+*firebase-service-account*.json
+*.pem
+*.key
+credentials.json

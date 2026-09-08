@@ -1,0 +1,16 @@
+package com.hadkarmeals.entity;
+
+public enum NotificationType {
+    OTP,
+    ORDER_CONFIRMATION,
+    ORDER_CANCELLATION,
+    ORDER_DELIVERED,
+    CLOSING_REMINDER,
+    SERVICE_CLOSED,
+    EMERGENCY_CLOSURE,
+    MENU_PUBLISHED,
+    BILL_GENERATED,
+    PAYMENT_RECEIVED,
+    PAYMENT_REMINDER,
+    ANNOUNCEMENT
+}
