@@ -20,19 +20,29 @@ public class FirebaseConfig {
     public void initialize() {
         try {
             if (FirebaseApp.getApps().isEmpty()) {
-                ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
-                if (resource.exists()) {
-                    try (InputStream serviceAccount = resource.getInputStream()) {
-                        FirebaseOptions options = FirebaseOptions.builder()
-                                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                                .setProjectId("hadkarmeals")
-                                .build();
-
-                        FirebaseApp.initializeApp(options);
-                        log.info("🔥 Firebase Admin SDK initialized successfully for project: hadkarmeals");
-                    }
+                String envCredentials = System.getenv("FIREBASE_CREDENTIALS");
+                InputStream serviceAccount;
+                
+                if (envCredentials != null && !envCredentials.trim().isEmpty()) {
+                    serviceAccount = new java.io.ByteArrayInputStream(envCredentials.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 } else {
-                    log.warn("⚠️ firebase-service-account.json not found. Push notifications will be skipped.");
+                    ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
+                    if (resource.exists()) {
+                        serviceAccount = resource.getInputStream();
+                    } else {
+                        log.warn("⚠️ Firebase credentials not found in ENV or classpath. Firebase Auth will fail.");
+                        return;
+                    }
+                }
+
+                try (InputStream stream = serviceAccount) {
+                    FirebaseOptions options = FirebaseOptions.builder()
+                            .setCredentials(GoogleCredentials.fromStream(stream))
+                            .setProjectId("hadkarmeals")
+                            .build();
+
+                    FirebaseApp.initializeApp(options);
+                    log.info("🔥 Firebase Admin SDK initialized successfully for project: hadkarmeals");
                 }
             }
         } catch (Exception e) {
