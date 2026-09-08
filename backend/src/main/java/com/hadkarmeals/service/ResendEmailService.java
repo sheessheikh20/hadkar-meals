@@ -49,6 +49,9 @@ public class ResendEmailService {
         try {
             restTemplate.postForEntity(url, entity, String.class);
             System.out.println("OTP sent to " + toEmail + " via Resend.");
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            System.err.println("Resend API Error: " + e.getResponseBodyAsString());
+            throw new RuntimeException("Failed to send verification email: " + e.getResponseBodyAsString());
         } catch (Exception e) {
             System.err.println("Failed to send OTP via Resend: " + e.getMessage());
             throw new RuntimeException("Failed to send verification email. Please try again later.");
