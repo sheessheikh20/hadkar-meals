@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   User as UserIcon,
+  Database
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {

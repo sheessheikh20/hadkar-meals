@@ -25,9 +25,9 @@ export const BottomNav: React.FC = () => {
   }, [location.pathname]);
 
   const studentTabs = [
-    { to: '/student/dashboard', icon: UtensilsCrossed, label: 'Menu' },
-    { to: '/student/orders',    icon: ClipboardList,   label: 'Orders' },
-    { to: '/student/profile',   icon: User,            label: 'Profile' },
+    { id: 'menu', to: '/student/dashboard', icon: UtensilsCrossed, label: 'Menu' },
+    { id: 'orders', to: '/student/orders',    icon: ClipboardList,   label: 'Orders' },
+    { id: 'profile', to: '/student/profile',   icon: User,            label: 'Profile' },
   ];
 
   const adminTabs = [

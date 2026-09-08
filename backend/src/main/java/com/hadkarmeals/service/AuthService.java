@@ -79,6 +79,10 @@ public class AuthService {
         String email = decoded.getEmail() != null ? decoded.getEmail().toLowerCase().trim() : null;
         String name = decoded.getName();
 
+        if (email != null && isDisposableEmail(email)) {
+            throw new BusinessException("Temporary or disposable emails are not allowed.");
+        }
+
         // 1. Try find existing user by googleId first, then by email
         User user = userRepository.findByGoogleId(googleUid)
                 .orElseGet(() -> email != null ? userRepository.findByEmail(email).orElse(null) : null);

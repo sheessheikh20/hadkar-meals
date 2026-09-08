@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword } from '../utils/firebase';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import disposableDomains from '../utils/disposable_domains.json';
 
 type AuthMethod = 'google' | 'email';
 
@@ -43,6 +44,13 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    
+    const domain = email.trim().split('@')[1]?.toLowerCase();
+    if (domain && (disposableDomains as string[]).includes(domain)) {
+      setError('Temporary or disposable emails are not allowed.');
+      return;
+    }
+
     setLoading(true); setError(null);
     try {
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
